@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataTable - Búsqueda sin tildes</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+</head>
+<body>
+
+    <table id="miTabla" class="display">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>País</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>José</td><td>México</td></tr>
+            <tr><td>Andrés</td><td>España</td></tr>
+            <tr><td>Lucía</td><td>Perú</td></tr>
+            <tr><td>María</td><td>Argentina</td></tr>
+            <tr><td>Camila</td><td>Colombia</td></tr>
+        </tbody>
+    </table>
+
+    <script>
+        $(document).ready(function () {
+            // Función para eliminar tildes y normalizar texto
+            function normalizarTexto(texto) {
+                return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            }
+
+            var table = $('#miTabla').DataTable();
+
+            // Personalizar la búsqueda sin tildes
+            $('#miTabla_filter input').off().on('keyup', function () {
+                var searchTerm = normalizarTexto(this.value);
+
+                table.search('').draw(); // Limpiar búsqueda antes de aplicar la personalizada
+
+                table.rows().every(function () {
+                    var rowData = this.data().join(' '); // Obtener datos de la fila
+                    var normalizedData = normalizarTexto(rowData);
+
+                    if (normalizedData.includes(searchTerm)) {
+                        $(this.node()).show();
+                    } else {
+                        $(this.node()).hide();
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
