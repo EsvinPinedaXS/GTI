@@ -1,0 +1,3015 @@
+@using WebApplicationMVC.Models
+@model List<WebApplicationMVC.Models.CasoNoAsignado>
+@{
+    /**/
+
+    Layout = "";
+    List<Opcion> lstAcciones = ViewBag.lstAcciones;
+    bool vEsUsuarioArea = Convert.ToBoolean(Session["besUsuarioArea"]);
+    int idAreaExterna = Convert.ToInt32(Session["idAreaExterna"]);
+}
+
+
+
+
+@* Tabs internos de la pantalla, y que utilizan los botones del encabezado para realizar las acciones de cambiar de seccin entre casos y tareas *@
+<!--<div class="container" hidden>
+    <div class="tabs">
+        <input type="radio" id="opTabCasos" name="tabs" checked />
+        <label for="opTabCasos" class="tab">Casos</label>
+
+        <input type="radio" id="opTabTareas" name="tabs" />
+        <label for="opTabTareas" class="tab">Tareas</label>
+
+        <input type="radio" id="opTabDependenciaTareas" name="tabs" />
+        <label for="opTabDependenciaTareas" class="tab">Dependencia Tareas</label>
+
+        <input type="radio" id="opTabAreas" name="tabs" />
+        <label for="opTabAreas" class="tab">Areas</label>
+
+        <span class="glider"></span>
+    </div>
+</div>
+
+<div class="form-row" id="form_tabs_usuario">
+    <div class="col-md-6 mb-6">
+        <ul class="nav nav-pills mb-3" id="tabs_casos" role="tablist" style="margin-bottom:0.25rem !important">
+            <li class="nav-item pill-success">
+                <a style="background-color:#fff; margin-right: 5px; border-radius:0px" class="nav-link active" id="opt_casos_asignados" data-id="1" data-toggle="pill" href="#content_casos_asignados" role="tab" aria-controls="content_casos_asignados" aria-selected="true">Asignados<span class="badge badge-warning" id="conteo_asignados"></span></a>
+            </li>
+            <li class="nav-item pill-success">
+                <a style="background-color:#fff; margin-right: 5px; border-radius:0px" class="nav-link" id="opt_casos_no_asignados" data-id="2" data-toggle="pill" href="#content_casos_no_asignados" role="tab" aria-controls="content_casos_no_asignados" aria-selected="false">Pendientes de Asignar <span class="badge badge-warning" id="conteo_noasignados"></span></a>
+            </li>
+        </ul>
+    </div>
+    <div class="col-md-6 mb-6" style="display:flex; justify-content:flex-end;">
+        <ul class="nav nav-pills" id="pills-tab" role="tablist">
+            <li class="nav-item pill-success">
+
+            </li>
+            <li class="nav-item pill-success">
+
+            </li>
+        </ul>
+        <div class="tab-content" id="pills-tabContent">
+            <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab"></div>
+            <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab"></div>
+        </div>-->
+@*<button class="btn btn-primary" data-toggle="modal" data-target="#mdBusquedaCaso" id="btnBusquedaCasosArea" title="Buscar información de casos"><i class="fa fa-search"></i></button>
+    <button class="btn btn-success" id="btnRefrescarCasosArea" title="Refrescar información de casos"><i class="fa fa-sync"></i></button>*@
+<!--</div>
+</div>-->
+<div class="container" hidden>
+    <div class="tabs">
+        <input type="radio" id="opTabCasos" name="tabs" checked />
+        <label for="opTabCasos" class="tab">Casos</label>
+
+        <input type="radio" id="opTabTareas" name="tabs" />
+        <label for="opTabTareas" class="tab">Tareas</label>
+
+        <input type="radio" id="opTabDependenciaTareas" name="tabs" />
+        <label for="opTabDependenciaTareas" class="tab">Dependencia Tareas</label>
+
+        <input type="radio" id="opTabAreas" name="tabs" />
+        <label for="opTabAreas" class="tab">Areas</label>
+
+        <span class="glider"></span>
+    </div>
+</div>
+
+<!-- Inputs ocultos -->
+<input type="radio" name="tabsR" id="opt_casos_asignados" checked>
+<input type="radio" name="tabsR" id="opt_casos_no_asignados">
+@*<input type="radio" name="tabs" id="opTabDependenciaTareas">
+    <input type="radio" name="tabs" id="opTabAreas">*@
+
+<!-- Tabs con scroll horizontal -->
+<div class="tabs-wrapper" id="form_tabs_usuario">
+    <div class="tabs">
+        <label for="opt_casos_asignados" class="tab-label label1"><i class="fas fa-list-alt"></i>Asignados <span class="badge badge-danger" id="conteo_asignados">2</span></label>
+        <label for="opt_casos_no_asignados" class="tab-label label2"><i class="fas fa-bars"></i>Pendientes</label>
+        @*<label for="opTabDependenciaTareas" class="tab-label label3"><i class="fas fa-cog"></i>Configuración</label>
+            <label for="opTabAreas" class="tab-label label4"><i class="fas fa-envelope"></i>Mensajes</label>*@
+        <!-- Puedes agregar más tabs si quieres -->
+    </div>
+</div>
+
+<nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item" id="crumbhome"><a href="#">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Library</li>
+    </ol>
+</nav>
+
+
+<div class="tab-pane fade show active" id="content_casos_asignados" role="tabpanel" aria-labelledby="opt_casos_asignados">
+    <section id="seccionCasos" data-tipo="A" data-href-asignados="@Url.Action("CasosAsignados","CasosTareas")" data-href-creados="@Url.Action("RequerimientosCreados","CasosTareas")" data-href-noAsignados="@Url.Action("RequerimientosNoAsignados","CasosTareas")" data-href-tiempos="@Url.Action("CasosTiempos","CasosTareas")" style="overflow:visible">
+        @* A-Asignados, S-Sin Asignar, C-Creados *@
+
+        <section id="seccionCasosAsignados" style="overflow:visible">
+
+            <div class="card shadow mb-4" style="overflow:visible; background-color:#f7fbfe; border-style:solid; border-color:#d3dce8; border-width:0px;">
+
+                <div class="form-row" style="background-color:whitesmoke">
+                    <div class="col-md-6 mb-6">
+                        <h6 id="contextmenu1" style="font-weight:700; color: #009afd; margin-left:0.50rem; padding:0.25rem;">Casos Asignados</h6>
+
+                        <!-- Menú contextual -->
+                        @*<div id="contextMenu" class="dropdown-menu show">
+                                <a class="dropdown-item" href="#"><i class="fas fa-file-alt mr-2"></i> Ver archivo</a>
+                                <a class="dropdown-item" href="#"><i class="fas fa-edit mr-2"></i> Editar</a>
+
+                                <div class="dropdown-submenu">
+                                    <a class="dropdown-item dropdown-toggle" href="#"><i class="fas fa-cogs mr-2"></i> Opciones</a>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="#"><i class="fas fa-wrench mr-2"></i> Configurar</a>
+                                        <a class="dropdown-item" href="#"><i class="fas fa-trash-alt mr-2"></i> Eliminar</a>
+                                    </div>
+                                </div>
+
+                                <a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión</a>
+                            </div>*@
+
+                        <!--<div id="pulse"></div>
+                        <div id="contextMenu">
+                            <ul>
+                                <li>
+                                    <i class="fa fa-folder-open-o" aria-hidden="true"></i>
+                                    <div class="name">Open</div>
+                                </li>
+                                <li class="disabled">
+                                    <i></i>
+                                    <div class="name">Open in new tab</div>
+                                </li>-->
+                        @*<div class="break"></div>*@
+                        <!--<li>
+                            <i class="fa fa-scissors" aria-hidden="true"></i>
+                            <div class="name">Cut</div>
+                        </li>
+                        <li>
+                            <i class="fa fa-clone" aria-hidden="true"></i>
+                            <div class="name">Copy</div>
+                        </li>
+                        <li>
+                            <i class="fa fa-clipboard" aria-hidden="true"></i>
+                            <div class="name">Paste</div>
+                        </li>-->
+                        @*<div class="break"></div>*@
+                        <!--<li>
+                            <i class="fa fa-refresh" aria-hidden="true"></i>
+                            <div class="name">Reload</div>
+                        </li>
+                        <li>
+                            <i class="fa fa-paint-brush" aria-hidden="true"></i>
+                            <div class="name">Print</div>
+                        </li>-->
+                        @*<div class="break"></div>*@
+                        <!--<li class="share">
+                                    <div class="name">Share</div>
+                                    <div class="icons">
+                                        <i class="fa fa-facebook"></i>
+                                        <i class="fa fa-twitter"></i>
+                                        <i class="fa fa-instagram"></i>
+                                        <i class="fa fa-google-plus"></i>
+                                        <i class="fa fa-pinterest"></i>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>-->
+                    </div>
+                    <div class="col-md-6 mb-6" style="display:flex; justify-content:flex-end;">
+
+                        @if (lstAcciones.Exists(o => o.cs_desc_cat_sistema == "PantallaNCaso"))
+                        {
+                            <a id='btnAddCaso' href='@Url.Action("Add","Requerimiento")' class='btn btn-info btn-sm btn-icon-split' style="margin-right:3px; background-color:#6D7AE0;"><span class='icon text-white'><i class='fas fa-plus'></i></span><span class='text' style="font-weight:500; vertical-align:middle;">Agregar Caso</span></a>
+                        }
+                        <button class="btn btn-info" id="btnRefrescarCasosAsignados" title="Refrescar información de casos" style="background-color:#6D7AE0;"><i class="fa fa-sync"></i></button>
+                    </div>
+                </div>
+
+                <div class="card shadow mb-2 fondo-filtros" style="overflow:visible; margin-bottom:0px;">
+
+                    <!-- Card Content - Collapse -->
+                    @*<div class="collapse show" id="collapseCardExample" style="background-color:#f7fbfe; border-style:solid; border-color:#d3dce8; border-width:0px;">*@
+                    <div class="form-row fondo-filtros" style="padding:0.10rem;">
+                        <div class="col-md-1 mb-1" style="margin-bottom:0.10rem !important;">
+                            <div class="input-group">
+                                <h6 class="m-0 font-weight-bold text-black-50" style="vertical-align:middle;">Filtros</h6>
+                            </div>
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" id="check_fechas" class="custom-control-input" title="Mostrar filtros avanzados" />
+                                <label class="custom-control-label align-bottom" for="check_fechas" title="Mostrar filtros avanzados">Avanzado</label>
+                            </div>
+                        </div>
+                        @*<div class="scrollmenu" style="margin:0; padding:0;">*@
+                        <div class="col-md-2 mb-2" style="margin-bottom:0.10rem !important;">
+                            @*<label for="casos_estados">Estado</label>*@
+                            <div class="input-group">
+                                <div class="input-group-append">
+                                    <span class="input-group-text header-titulos-multiselect-default" id="inputgroup1">Estado</span>
+                                </div>
+                                <select id="casos_estado" multiple="multiple" class="form-control" aria-describedby="inputgroup1"></select>
+                            </div>
+
+                        </div>
+
+                        <div class="col-md-3 mb-3" style="margin-bottom:0.10rem !important;">
+                            @*<label for="casos_estados">Estado</label>*@
+                            <div class="input-group">
+                                <div class="input-group-append">
+                                    <span class="input-group-text header-titulos-multiselect-default" id="inputgroup3">Analista</span>
+                                </div>
+                                <select id="casos_analista" multiple="multiple" class="form-control" aria-describedby="inputgroup3"></select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3" style="margin-bottom:0.10rem !important;" id="divAreaSolicitante">
+                            <div class="input-group">
+                                <div class="input-group-append">
+                                    <span class="input-group-text header-titulos-multiselect-default" id="inputgroup4">Area Solicitante</span>
+                                </div>
+                                <select id="casos_area_solicitante" multiple="multiple" class="form-control" aria-describedby="inputgroup4"></select>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3" style="margin-bottom:0.10rem !important;" id="divAreaAsignada">
+                            <div class="input-group">
+                                <div class="input-group-append">
+                                    <span class="input-group-text header-titulos-multiselect-default" id="inputgroup2">Area Asignada</span>
+                                </div>
+                                <select id="casos_area" multiple="multiple" class="form-control" aria-describedby="inputgroup2"></select>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="form-row fondo-filtros" style="padding:0.10rem;">
+                        <div class="col-md-1 mb-1" style="margin-bottom:0.10rem !important;">
+                            @*<div class="input-group">
+                                    <h6 class="m-0 font-weight-bold text-black-50" style="vertical-align:middle;">Fechas</h6>
+                                </div>*@
+                        </div>
+
+                        <div class="col-md-2 mb-2" style="margin-bottom:0.10rem !important; display:none;" id="divFechasFin">
+                            <div class="input-group">
+                                <div class="input-group-append">
+                                    <span class="input-group-text header-titulos-multiselect-default" id="inputgroupfin">Fin</span>
+                                </div>
+                                @*<label for="fec_fin"><b>Fechas de fin:</b></label>*@
+                                <input type="text" id="fec_fin" class="form-control" aria-describedby="inputgroupfin" />
+                            </div>
+                        </div>
+
+                        <div class="col-md-3 mb-3" style="margin-bottom: 0.10rem !important; display: none;" id="divFechasInicio">
+                            <div class="input-group">
+                                <div class="input-group-append">
+                                    <span class="input-group-text header-titulos-multiselect-default" id="inputgroupfi">Inicio</span>
+                                </div>
+                                <input type="text" id="fec_ini" class="form-control" aria-describedby="inputgroupfi" />
+                            </div>
+                        </div>
+
+
+                        <div class="col-md-3 mb-3" style="margin-bottom: 0.10rem !important; display: none;" id="divFechasCompromiso">
+                            <div class="input-group">
+                                <div class="input-group-append">
+                                    <span class="input-group-text header-titulos-multiselect-default" id="inputgroupcom">Compromiso</span>
+                                </div>
+                                @*<label for="fec_com"><b>Fechas de compromiso:</b></label>*@
+                                <input type="text" id="fec_com" class="form-control" aria-describedby="inputgroupcom" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                @* white *@
+                <div class="card-body table-responsive fondo-filtros">
+                    <table class="table table-bordered table-hover" id="dataCasos" cellspacing="0" cellpadding="0" border="0" style="overflow:visible !important; width:100%; border-radius:10px;">
+                        <thead>
+                            <tr>
+                                <th title="Acciones">Acciones</th>
+                                @*<th>Correlativo</th>*@
+                                <th title="Número caso interno">Caso</th>
+                                <th title="Prioridad">Proridad</th>
+                                <th title="Referencia en sistema iTop">Caso iTop</th>
+                                <th title="Estado">Estado</th>
+                                <th title="Nombre del caso">Título</th>
+                                <th title="Fecha inicial">Fecha Inicio</th>
+                                <th title="Fecha de compromiso">Fecha Compromiso</th>
+                                <th title="Fecha de finalización">Fecha Fin</th>
+                                <th title="Analista encargado">Analista</th>
+                                <th title="Porcentaje de avance">Avance</th>
+                                <th title="Promedio de calificación">Nota</th>
+                                <th title="Etapa">Etapa</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                @{
+                    TempData["mLstArea"] = ViewBag.mLstArea;
+                    TempData["mLstAnalista"] = ViewBag.mLstAnalista;
+                    TempData["mLstEstado"] = ViewBag.mLstEstado;
+                    TempData["lstAcciones"] = ViewBag.lstAcciones;
+                }
+            </div>
+        </section>
+
+        <!-----------------------------------------------------------Secion de Tareas--------------------------------------------------------------->
+        <section id="seccionTareas">
+            <div class="card shadow mb-4" style="overflow:visible;">
+
+                <div class="form-row">
+                    <div class="col-md-6 mb-6">
+                        <h6 style="font-weight:700; color: #009afd; margin-left:0.50rem; padding:0.25rem;">Tareas del Caso</h6>
+                        @*<h6 style="font-weight:700; color:#009afd;">Requerimientos por departamento</h6>*@
+                        @*<h6 style="font-weight:700; color: #41444c; margin-left:0.50rem; padding:0.25rem;">Listado de Tareas del caso</h6>*@
+
+
+                    </div>
+                    <div class="col-md-6 mb-6" style="display:flex; justify-content:flex-end;">
+
+                        <ul class="nav nav-pills" id="pills-tab" role="tablist">
+                            <li class="nav-item pill-success">
+                                @*<a class="nav-link active" id="pills-home-tab" data-toggle="pill" href="#pills-home" role="tab" aria-controls="pills-home" aria-selected="true" style="float:left;"><i class="fa fa-search"></i></a>*@
+                            </li>
+                            <li class="nav-item pill-success">
+                                @*<a class="nav-link" id="pills-profile-tab" data-toggle="pill" href="#pills-profile" role="tab" aria-controls="pills-profile" aria-selected="false"><i class="fa fa-search"></i></a>*@
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="pills-tabContent">
+                            <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab"></div>
+                            <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab"></div>
+                        </div>
+                        @*<button class="btn btn-primary" data-toggle="modal" data-target="#mdBusquedaCaso" id="btnBusquedaCasosArea" title="Buscar información de casos"><i class="fa fa-search"></i></button>*@
+                        <div class="col-md-12 mb-12" style="display:flex; justify-content:flex-end;">
+                            <button class="btn btn-warning btn-sm" id="btnRegresarACasos" title="Regresar a listado de casos" style="margin-right:3px;"><i class="fa fa-arrow-alt-circle-left">&nbsp;Casos</i></button>
+                            <a id='btnAddTarea' href='@Url.Action("Add","Tarea")' class='btn btn-success btn-sm btn-icon-split' style="margin-right:3px;" data-url-agregar-tarea='@Url.Action("Add","Tarea")' title="Agregar nueva tarea"><span class='icon text-white'><i class='fas fa-plus'></i></span><span class='text' style="font-weight:500; vertical-align:middle;">Agregar Tarea</span></a>
+                            <button class="btn btn-info" id="btnRefrescarTareas" title="Refrescar información de tareas" style="background-color:#6D7AE0;"><i class="fa fa-sync"></i></button>
+                        </div>
+                        @*<a id="btnIndexCaso" data-toggle="modal" data-target="#mymodal" class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm"><span class="fas fa-plus fa-sm text-white-50"></span></a>*@
+                    </div>
+                </div>
+
+
+                <div class="card shadow mb-4">
+                    <!-- Card Header - Accordion -->
+                    @*<a href="#collapseTareas" class="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="collapseCardExample">
+                            <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+                        </a>*@
+                    <!-- Card Content - Collapse -->
+
+                    <div class="alert-custom" id="alertaInfo" data-id-caso="-1" data-id-estado-caso="-1">
+                        @*<span class="closebtn-alert" id="cerrarAlertaInfo">&times;</span>*@
+                        <div class="form-group row justify-content-left">
+                            <strong class="col-sm-1">Caso: </strong>
+                            <div class="col-sm-3">
+                                <span id="header_caso"></span>
+                            </div>
+
+                            <strong class="col-sm-1">Estado: </strong>
+                            <div class="col-sm-1">
+                                <span id="header_estado"></span>
+                            </div>
+
+                            <strong class="col-sm-2">Fecha Inicio: </strong>
+                            <div class="col-sm-2">
+                                <span id="header_fecha_inicio"></span>
+                            </div>
+
+                            <strong class="col-sm-1">Calificación: </strong>
+                            <div class="col-sm-1">
+                                <span id="header_califica"></span>
+                            </div>
+
+                        </div>
+                        <div class="form-group row justify-content-left">
+
+                            <strong class="col-sm-1">Analista: </strong>
+                            <div class="col-sm-3">
+                                <span id="header_analista"></span>
+                            </div>
+
+                            <strong class="col-sm-1">Avance: </strong>
+                            <div class="col-sm-1">
+                                <span id="header_avance"></span>
+                            </div>
+
+                            <strong class="col-sm-2">Fecha Compromiso: </strong>
+                            <div class="col-sm-2">
+                                <span id="header_fecha_compromiso"></span>
+                            </div>
+
+
+                        </div>
+
+                        @*<strong>Succes</strong> <span id="infocaso">El titulo del caso</span>*@
+                    </div>
+
+                    <div class="collapse show" id="collapseTareas">
+                        <div class="form-row">
+
+                            <div class="col-md-1 mb-2">
+                                <div class="input-group">
+                                    <h6 class="m-0 font-weight-bold  text-black-50" style="vertical-align:middle">Filtros</h6>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                @*<label for="casos_estados">Estado</label>*@
+
+                                <div class="input-group">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text" id="inputgroup1">Estado</span>
+                                    </div>
+                                    <select id="tareas_estado" multiple="multiple" class="form-control" aria-describedby="inputgroup1"></select>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="card-body table-responsive" style="background-color:#f7fbfe; border-style:solid; border-color:#d3dce8; border-width:1px;">
+                    <table class="table table-bordered table-hover" id="dataTareas" cellspacing="0" style="overflow:visible; width:100%">
+                        <thead>
+                            <tr>
+                                <th>Acciones</th>
+                                <th title="Prioridad de Tarea">No.</th>
+                                <th title="Clasificación">Tipo Tarea</th>
+                                <th title="Nombre de la tarea">Titulo Tarea</th>
+                                <th title="Estado">Estado</th>
+                                <th title="Fecha de inicio">Fecha Inicio</th>
+                                <th title="Fecha de compromiso">Fecha Estimada</th>
+                                <th title="Fecha de finalización">Fecha Real</th>
+                                <th title="Horas Estimadas">No. Horas</th>
+                                <th title="Tarea Vencida">Vencida</th>
+                                <th title="Porcentaje de avance">Avance</th>
+                                <th title="Calificación">Nota</th>
+                                <th title="Número de vencimientos">No. Vto.</th>
+                                <th title="Número de  priorizaciones">No. Prior.</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        @* 20230925 *@
+        <section id="seccionDependenciaTareas">
+            <div class="card shadow mb-4" style="overflow:visible;">
+
+                <div class="form-row">
+                    <div class="col-md-6 mb-6">
+                        <h6 style="font-weight:700; color: #009afd; margin-left:0.50rem; padding:0.25rem;">Dependencias de Tarea</h6>
+                    </div>
+                    <div class="col-md-6 mb-6" style="display:flex; justify-content:flex-end;">
+
+                        <ul class="nav nav-pills" id="pills-tab" role="tablist">
+                            <li class="nav-item pill-success">
+                                @*<a class="nav-link active" id="pills-home-tab" data-toggle="pill" href="#pills-home" role="tab" aria-controls="pills-home" aria-selected="true" style="float:left;"><i class="fa fa-search"></i></a>*@
+                            </li>
+                            <li class="nav-item pill-success">
+                                @*<a class="nav-link" id="pills-profile-tab" data-toggle="pill" href="#pills-profile" role="tab" aria-controls="pills-profile" aria-selected="false"><i class="fa fa-search"></i></a>*@
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="pills-tabContent">
+                            <div class="tab-pane fade show active" id="pills-home" role="tabpanel" aria-labelledby="pills-home-tab"></div>
+                            <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab"></div>
+                        </div>
+                        @*<button class="btn btn-primary" data-toggle="modal" data-target="#mdBusquedaCaso" id="btnBusquedaCasosArea" title="Buscar información de casos"><i class="fa fa-search"></i></button>*@
+                        <button class="btn btn-warning btn-sm" id="btnRegresarATareas" title="Regresar a listado de Tareas"><i class="fa fa-arrow-alt-circle-left">&nbsp;Tareas</i></button>
+
+                        @*<a id="btnIndexCaso" data-toggle="modal" data-target="#mymodal" class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm"><span class="fas fa-plus fa-sm text-white-50"></span></a>*@
+                    </div>
+                </div>
+
+
+                <div class="card shadow mb-4">
+                    <!-- Card Header - Accordion -->
+                    @*<a href="#collapseTareas" class="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="collapseCardExample">
+                            <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+                        </a>*@
+                    <!-- Card Content - Collapse -->
+
+                    <div class="alert-custom-info" id="alertaInfoTarea" data-id-tarea="-1" data-id-estado-tarea="-1">
+                        @*<span class="closebtn-alert" id="cerrarAlertaInfo">&times;</span>*@
+                        <div class="form-group row justify-content-left">
+                            <strong class="col-sm-1">Tarea: </strong>
+                            <div class="col-sm-3">
+                                <span id="tarea_header_id"></span>
+                            </div>
+
+                            <strong class="col-sm-1">Estado: </strong>
+                            <div class="col-sm-2">
+                                <span id="tarea_header_estado"></span>
+                            </div>
+
+                            <strong class="col-sm-2">Fecha Inicio: </strong>
+                            <div class="col-sm-2">
+                                <span id="tarea_header_fecha_inicio"></span>
+                            </div>
+
+                        </div>
+                        <div class="form-group row justify-content-left">
+
+                            <strong class="col-sm-1">Analista: </strong>
+                            <div class="col-sm-3">
+                                <span id="tarea_header_analista"></span>
+                            </div>
+
+                            <strong class="col-sm-1">Avance: </strong>
+                            <div class="col-sm-2">
+                                <span id="tarea_header_avance"></span>
+                            </div>
+
+                            <strong class="col-sm-2">Fecha Compromiso: </strong>
+                            <div class="col-sm-2">
+                                <span id="tarea_header_fecha_compromiso"></span>
+                            </div>
+                        </div>
+
+                        @*<strong>Succes</strong> <span id="infocaso">El titulo del caso</span>*@
+                    </div>
+
+                </div>
+
+                <div class="card-body table-responsive" style="background-color:#f7fbfe; border-style:solid; border-color:#d3dce8; border-width:1px;">
+                    <table class="table table-bordered" id="dataDependenciaTareas" cellspacing="0" style="overflow:visible; width:100%">
+                        <thead>
+                            <tr>
+                                <th>Acciones</th>
+                                <th>Correlativo</th>
+                                <th>Fecha Compromiso</th>
+                                <th>Dependencia</th>
+                                <th>Responsable</th>
+                                <th>Comentarios</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="seccionTareas">
+            <div class="card shadow mb-4" style="overflow:visible;" id="ejemplo1298">
+
+            </div>
+        </section>
+
+    </section>
+    <input type="hidden" id="urlID" value="@Url.Action("Index","CasosTareas")">
+</div>
+<div class="tab-pane fade" id="content_casos_no_asignados" role="tabpanel" aria-labelledby="opt_casos_no_asignados">
+    <div class="card shadow mb-4" style="overflow:visible;">
+
+        <div class="form-row" style="background-color:whitesmoke">
+            <div class="col-md-6 mb-6">
+                <h6 style="font-weight:700; color: #009afd; margin-left:0.50rem; padding:0.25rem;">Casos No Asignados</h6>
+            </div>
+            <div class="col-md-6 mb-6" style="display:flex; justify-content:flex-end;">
+                <button class="btn btn-info" id="btnRefrescarCasosNoAsignados" title="Refrescar información de casos" style="background-color:#6D7AE0;"><i class="fa fa-sync"></i></button>
+            </div>
+        </div>
+
+        <div class="card shadow mb-2" style="overflow:visible; margin-bottom:0px;">
+
+            <!-- Card Content - Collapse -->
+            <div class="collapse show" id="collapseCardExample" style="background-color:#f7fbfe; border-style:solid; border-color:#d3dce8; border-width:0px;">
+                <div class="form-row">
+                    <div class="col-md-1 mb-2" style="margin-bottom:0.25rem !important;">
+                        <div class="input-group">
+                            <h6 class="m-0 font-weight-bold text-black-50" style="vertical-align:middle;">Filtros</h6>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-3" style="margin-bottom:0.25rem !important;" id="divAreaSolicitante">
+                        <div class="input-group">
+                            <div class="input-group-append">
+                                <span class="input-group-text header-titulos-multiselect-default" id="inputgroup6">Area Solicitante</span>
+                            </div>
+                            <select id="reqs_area_solicitante" multiple="multiple" class="form-control" aria-describedby="inputgroup6"></select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-3" style="margin-bottom:0.25rem !important;" id="divCoordinacionSolicitante">
+                        <div class="input-group">
+                            <div class="input-group-append">
+                                <span class="input-group-text header-titulos-multiselect-default" id="inputgroup7">Coordinación</span>
+                            </div>
+                            <select id="reqs_coord_solicitante" multiple="multiple" class="form-control" aria-describedby="inputgroup7"></select>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <section id="seccionCasosSinAsignar" style="overflow:visible">
+            <div class="card-body table-responsive" style="background-color:#f7fbfe; border-style:solid; border-color:#d3dce8; border-width:1px;">
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-hover sin-espacios" id="tableNoAsignados" cellspacing="0" style="overflow:visible !important; overflow-x:visible; overflow-y:visible;">
+                        <thead>
+                            <tr>
+                                <th>Acciones</th>
+                                <th>Correlativo</th>
+                                <th>Caso</th>
+                                <th>Referencia iTop</th>
+                                <th>Estado</th>
+                                <th>Título</th>
+                                <th>Prioridad Departamento</th>
+                                <th>Departamento solicitante</th>
+                                <th>Fecha Creación</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Compromiso</th>
+                                <th>Fecha Finalización</th>
+                                <th>Analista Asignado</th>
+                                <th>Avance</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+
+    <input type="hidden" id="dataGridTitle" value="Listado de Casos Asignados">
+    <input type="hidden" id="dataGridTitleTareas" value="Listado de Tareas Asignadas">
+    <input type="hidden" id="exportColumnsAsignados" value="1,2,3,4,5,6,8,9,10,11,12">
+    <input type="hidden" id="exportColumnsNoAsignados" value="2,3,4,5,6,7,8,9,10,11,12,13">
+    <input type="hidden" id="exportColumnsTareas" value="2,3,4,5,6,7,8,9,10,11,12,13">
+    <input type="hidden" id="sortingCols" value="[[9, 'asc'],[3, 'asc'],[1, 'asc']]">
+    <input type="hidden" id="inicializarDatos" value="false">
+    <input type="hidden" id="inicializarDatosArea" value="false">
+    @*@:<a id="btnAddCaso" href="@Url.Action("Add", "Caso")" class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm"><span class="fas fa-plus fa-sm text-white-50">Nuevo Catálogo</span></a>*@
+    @*<h5> Listado de Casos</h5>*@
+</div>
+
+
+<section id="seccionAreas">
+    @* A-Asignados, S-Sin Asignar, C-Creados *@
+
+
+    <div class="card shadow mb-4">
+
+        <div class="card shadow mb-2">
+            <!-- Card Header - Accordion -->
+            <a href="#collapseCardExample" class="d-block card-header py-3" data-toggle="collapse" role="button" aria-expanded="true" aria-controls="collapseCardExample">
+                <h6 class="m-0 font-weight-bold text-primary">Filtros</h6>
+            </a>
+            <!-- Card Content - Collapse -->
+            <div class="collapse show" id="collapseCardExample">
+                <div class="form-row">
+                    <div class="col-md-3 mb-3">
+                        @*<label for="casos_estados">Estado</label>*@
+
+                        <div class="input-group">
+                            <div class="input-group-append">
+                                <span class="input-group-text" id="inputgroup1">Estado</span>
+                            </div>
+                            <select id="casos_estado_area" multiple="multiple" class="form-control" aria-describedby="inputgroup1"></select>
+                        </div>
+
+
+
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="input-group">
+                            <div class="input-group-append">
+                                <span class="input-group-text" id="inputgroup_area">Area Asignada</span>
+                            </div>
+                            <select id="filtro_casos_area" multiple="multiple" class="form-control" aria-describedby="inputgroup_area"></select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body table-responsive">
+            @*<table class="table table-bordered table-hover" id="dataAreas" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Caso</th>
+                            <th>Prioridad</th>
+                            <th>Referencia iTop</th>
+                            <th>Estado</th>
+                            <th>Título</th>
+                            <th>Fecha Creación</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Compromiso</th>
+                            <th>Fecha Finalización</th>
+                            <th>Área Asignada</th>
+                            <th>Analista Asignado</th>
+                            <th>Avance</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>*@
+        </div>
+    </div>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+
+        <input type="hidden" id="dataGridTitle" value="Listado de Casos Asignados">
+        <input type="hidden" id="exportColumns" value="1,2,3,5,6,7,8,9,10,11,12,13,14,15,16">
+        <input type="hidden" id="sortingCols" value="[[9, 'asc'],[3, 'asc'],[1, 'asc']]">
+        <input type="hidden" id="inicializarDatos" value="false">
+    </div>
+    @*@:<a id="btnAddCaso" href="@Url.Action("Add", "Caso")" class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm"><span class="fas fa-plus fa-sm text-white-50">Nuevo Catálogo</span></a>*@
+    @*<h5> Listado de Casos</h5>*@
+</section>
+
+<!---------------------------------------- Modal para cambiar priporidad de tarea - INICIO ----------------------------------------------->
+<div class="modal fade" id="mdPriorizaTarea" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Prioriza Tarea</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                <form id="dataFormPriorizaTarea">
+
+                    <div class="alert-custom" id="alertaInfo" data-id-caso="-1" data-id-estado-caso="-1">
+                        <div class="form-group row justify-content-left">
+                            <strong class="col-sm-2">Tarea: </strong>
+                            <div class="col-sm-6">
+                                <span id="PriorizaTarea_header_tarea"></span>
+                            </div>
+
+                            <strong class="col-sm-2">Prioridad Actual: </strong>
+                            <div class="col-sm-1">
+                                <span id="PriorizaTarea_header_prioridad"></span>
+                            </div>
+
+                        </div>
+                        <div class="form-group row justify-content-left">
+
+                            <strong class="col-sm-2">Fecha Inicio: </strong>
+                            <div class="col-sm-2">
+                                <span id="PriorizaTarea_header_fecha_inicio"></span>
+                            </div>
+
+                            <strong class="col-sm-2">Fecha Estimada: </strong>
+                            <div class="col-sm-2">
+                                <span id="PriorizaTarea_header_fecha_estimada"></span>
+                            </div>
+
+                            <strong class="col-sm-2">Horas: </strong>
+                            <div class="col-sm-1">
+                                <span id="PriorizaTarea_header_horas"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row"></div>
+
+                    <div class="form-group row">
+                        <strong class="col-sm-3 text-right align-content-center">Nueva Prioridad: </strong>
+                        <div class="col-sm-3" id="PriorizaTare_container_prioridad">
+                            <input type="number" id="nuevaPrioridadTarea" min="1" class="form-control form-control-user" value="" />
+                        </div>
+                        <strong class="col-sm-3 text-right align-content-center">Opción Prioridad: </strong>
+                        <div class="col-sm-3" id="PriorizaTare_container_opcion">
+                            <select id="PriorizaTarea_opcion" class="form-control form-control-user">
+                                <option value="0"></option>
+                                <option value="1">Opción 1</option>
+                                <option value="2">Opción 2</option>
+                            </select>
+                            @*<input type="number" id="nuevaPrioridadTarea" min="1" class="form-control form-control-user" value="" />*@
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning" role="alert" id="priorizaTareaOpciones" style="display:none;"></div>
+                    <div class="alert alert-danger" role="alert" id="priorizaTareaError" style="display:none;"></div>
+
+
+                </form>
+            </div>
+            <input type="hidden" id="indexPriorizaTarea" value="" />
+            <input type="hidden" id="Idtareab" value="" />
+            <input type="hidden" id="IDAnalista_PriorizaTarea" value="" />
+            <input type="hidden" id="PriorizaTarea_Prioridad" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Priorizar", "PriorizaTarea", "CasosTarea", new
+                {
+                    id = "btnPriorizaTarea",
+                    @class = "btn btn-primary",
+               modal_name = "#mdPriorizaTarea",
+               index_name = "#indexPriorizaTarea",
+               value1_name = "#Idtareab",
+               value2_name = "#nuevaPrioridadTarea",
+               value3_name = "#IDAnalista_PriorizaTarea",
+               value4_name = "#PriorizaTarea_Prioridad",
+               value5_name = "#PriorizaTarea_opcion",
+               url_success = Url.Action("Index", "Tarea")
+           })
+            </div>
+        </div>
+    </div>
+</div>
+<!---------------------------------------- Modal para cambiar priporidad de tarea - FIN ----------------------------------------------->
+<!-- Prioridad Modal-->
+<div class="modal fade" id="mdSolicitudAmpliacion" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Solicitud de ampliación de tiempo de entrega</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                <form id="dataSolicitudAmpliacion">
+                    @*<div class="col-sm-5 justify-content-center">*@
+
+                    <div class="form-group row justify-content-left">
+
+                        <label class="col-sm-4">Horas a solicitar </label>
+
+                        <div class="col-sm-7">
+                            <input type="number" id="horasSolicitud" min="0.15" max="99" step="1" class="form-control form-control-user" value="" />
+                        </div>
+                    </div>
+                    <div class="form-group row justify-content-left">
+
+                        <label class="col-sm-4">Comentarios de Solicitud </label>
+
+                        <div class="col-sm-7">
+                            <textarea id="comentariosSolicitud" class="form-control form-control-user" placeholder="Comentarios de solicitud" rows="4"></textarea>
+                        </div>
+                    </div>
+                    <div class="alert alert-danger" role="alert" id="SolicitaAmpliacionError" style="display:none;">
+                    </div>
+                    @*</div>*@
+                </form>
+            </div>
+            <input type="hidden" id="calledFrom" value="" />
+            <input type="hidden" id="indexIDTarea" value="" />
+            <input type="hidden" id="IDVencimiento" value="" />
+            <input type="hidden" id="opcionSolicitud" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Guardar", "EnviaSolicitudAmpliacion", "CasosTarea", new
+                {
+                    id = "btnTiempoTarea",
+                    @class = "btn btn-primary",
+               modal_name = "#mdSolicitudAmpliacion",
+               index_name = "#indexIDTarea",
+               index_vencimiento = "#IDVencimiento",
+               value0_name = "#calledFrom",
+               value1_name = "#horasSolicitud",
+               value2_name = "#comentariosSolicitud",
+               value3_name = "#opcionSolicitud",
+               url_success = Url.Action("Index", "Tarea")
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prioridad Modal Coordinador-->
+<div class="modal fade" id="mdAceptacionAmpliacion" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Respuesta de solicitud de ampliación de Tiempo para Tarea</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                <form id="dataModal">
+                    @*<div class="col-sm-5 justify-content-center">*@
+
+                    <div class="form-group row justify-content-left">
+
+                        <label class="col-sm-4">Horas solicitadas </label>
+
+                        <div class="col-sm-7">
+                            <input type="number" id="RhorasSolicitud" min="1" max="99" step="1" class="form-control form-control-user" value="" disabled />
+
+                        </div>
+                        @*<input type="checkbox" id="RHabilitarHoras" />*@
+                    </div>
+                    <div class="form-group row justify-content-left">
+
+                        <label class="col-sm-4">Comentarios de Solicitud </label>
+
+                        <div class="col-sm-7">
+                            <textarea id="RcomentariosSolicitud" class="form-control form-control-user" placeholder="Comentarios de solicitud" rows="2" disabled></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-group row justify-content-left">
+
+                        <label class="col-sm-4">Respuesta solicitud </label>
+
+                        <div class="col-sm-7">
+                            <select id="REstado" class="form-control form-control-user">
+                                <option value="0"></option>
+                                <option value="2">Aceptar</option>
+                                <option value="3">Rechazar</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group row justify-content-left">
+
+                        <label class="col-sm-4">Comentarios Respuesta </label>
+
+                        <div class="col-sm-7">
+                            <textarea id="RcomentariosRespuesta" class="form-control form-control-user" placeholder="Comentarios de solicitud" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="AmpliacionSolicitudError" style="display:none;">
+                    </div>
+                    @*</div>*@
+                </form>
+            </div>
+            <input type="hidden" id="RcalledFrom" value="" />
+            <input type="hidden" id="RindexIDTarea" value="" />
+            <input type="hidden" id="RIDVencimiento" value="" />
+            <input type="hidden" id="RopcionSolicitud" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Guardar", "GuardaSolicitud", "CasosTareas", new
+                {
+                    id = "btnAceptaTiempoTarea",
+                    @class = "btn btn-primary",
+               modal_name = "#mdAceptacionAmpliacion",
+               index_name = "#RindexIDTarea",
+               index_vencimiento = "#RIDVencimiento",
+               value0_name = "#RcalledFrom",
+               value1_name = "#RhorasSolicitud",
+               value2_name = "#RcomentariosSolicitud",
+               value3_name = "#RopcionSolicitud",
+               value4_name = "#RcomentariosRespuesta",
+               value5_name = "#REstado",
+               url_success = Url.Action("Index", "Tarea")
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Finalizar Tarea Modal-->
+
+<div class="modal fade" id="mdFinalizarTarea" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Finalizar Tarea</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                ¿Desea Finalizar la Tarea <em></em>?
+                <form id="dataModal">
+
+                    <div class="alert alert-danger" role="alert" id="FinalizarTareaError" style="display:none;">
+                    </div>
+                    @*</div>*@
+                </form>
+            </div>
+            <input type="hidden" id="ModalIDTareaFinalizar" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">No</button>
+                @Html.ActionLink("Si", "FinalizarTarea", "CasosTareas", new
+                {
+                    id = "btnFinalizarTarea",
+                    @class = "btn btn-primary",
+               modal_name = "#mdFinalizarTarea",
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdAsignaAnalista" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Asignación de Analista</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                @*¿Desea Finalizar la Tarea <em></em>?*@
+                <form id="dataModal">
+
+                    <div class="form-group row justify-content-left">
+
+                        <h6><label class="col-sm-4">Analista</label></h6>
+
+                        <div class="col-sm-7">
+                            <select id="AsignaAnalista" class="form-control form-control-user">
+                                <option value="0"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="AsignaCasoError" style="display:none;">
+                    </div>
+                </form>
+            </div>
+            <input type="hidden" id="IDAsignarCaso" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">No</button>
+                @Html.ActionLink("Asignar", "AsignarCasoAnalista", "CasosTareasController", new
+                {
+                    id = "btnAsignaAnalista",
+                    @class = "btn btn-primary",
+               modal_name = "#mdAsignaAnalista",
+               index_caso = "#IDAsignarCaso",
+               index_analista = "#AsignaAnalista"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mensaje Modal-->
+<div class="modal fade" id="mdMessage" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="messageModalIcon"></span>&nbsp;
+                <h5 class="modal-title" id="messageModalLabel"></h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div id="messageModalText" class="modal-body">
+            </div>
+
+            <div class="modal-footer">
+                @*<button class="btn btn-secondary" type="button" data-dismiss="modal">Cerrar</button>*@
+                <a id="btnModalcloseCasosTareas" class="btn btn-secondary" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">Cerrar</span></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AceptarRechazar Modal-->
+<div class="modal fade" id="mdAceptarRechazar" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Cronograma de tareas</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card">
+                    <form id="dataModalAceptarRechazar">
+                        <div class="card shadow mb-4" style="margin-bottom:3px !important; padding-bottom:3px !important;">
+                            <!-- Card Content - Collapse -->
+
+                            <div class="alert-custom" id="alertaInfo" data-id-caso="-1" data-id-estado-caso="-1">
+                                <div class="form-group row justify-content-left">
+                                    <strong class="col-sm-2">Caso: </strong>
+                                    <div class="col-sm-10">
+                                        <span id="Cronograma_header_caso"></span>
+                                    </div>
+
+                                </div>
+                                <div class="form-group row justify-content-left">
+
+                                    <strong class="col-sm-2">Fecha Inicio: </strong>
+                                    <div class="col-sm-2">
+                                        <span id="Cronograma_header_fecha_inicio"></span>
+                                    </div>
+
+                                    <strong class="col-sm-2">Fecha Estimada: </strong>
+                                    <div class="col-sm-2">
+                                        <span id="Cronogama_header_fecha_compromiso"></span>
+                                    </div>
+
+                                    <strong class="col-sm-2">Horas Estimadas:</strong>
+                                    <div class="col-sm-2">
+                                        <span id="Cronograma_header_horas_compromiso"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card shadow mb-4" style="margin-bottom:3px !important; padding-bottom:3px !important;">
+                            <div class="card-body table-responsive" style="background-color:#f7fbfe; border-style:solid; border-color:#d3dce8; border-width:1px;">
+                                <table class="table table-bordered table-hover" id="dataCronograma" cellspacing="0" style="border-radius:8px; width:100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>Prioridad</th>
+                                            <th>Título</th>
+                                            <th>Horas</th>
+                                            <th>Fecha Inicio</th>
+                                            <th>Fecha Estimada</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="form-group row justify-content-left">
+
+                            <div class="col-sm-2">
+                                <strong><label for="nuevaObservacion" id="labelObservacion" style="vertical-align:central">Comentarios:</label></strong>
+                            </div>
+                            <div class="col-sm-10">
+                                <textarea id="nuevaObservacion" name="nuevaObservacion" class="form-control form-control-user" placeholder="Comentarios" rows="2"></textarea>
+                                @*<input type="" id="nuevaObservacion" name="nuevaObservacion" class="form-control form-control-user" Enable="false" value="" />*@
+                            </div>
+                        </div>
+
+                        <div class="alert alert-danger" role="alert" id="AceptaRechazaError" style="display:none;"></div>
+
+
+                    </form>
+                </div>
+            </div>
+            <input type="hidden" id="indexAceptarRechazar" value="" />
+            <input type="hidden" id="user" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Rechazar", "AceptarRechazar", "CasosTareas", new
+                {
+                    id = "btnRechazarCronograma",
+                    @class = "btn btn-danger",
+               modal_name = "#mdAceptarRechazar",
+               index_name = "#indexAceptarRechazar",
+               value1_name = "#user",
+               value3_name = "#nuevaObservacion",
+               value4_name = "false",
+               url_success = Url.Action("Index", "CasoAceptar")
+           })
+                @Html.ActionLink("Aprobar", "AceptarRechazar", "CasosTareas", new
+                {
+                    id = "btnAprobarCronograma",
+                    @class = "btn btn-success",
+               modal_name = "#mdAceptarRechazar",
+               index_name = "#indexAceptarRechazar",
+               value1_name = "#user",
+               value3_name = "#nuevaObservacion",
+               value4_name = "true",
+               url_success = Url.Action("Index", "CasoAceptar")
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Prioridad Modal-->
+<div class="modal fade" id="mdPriorizaCaso" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Priorizar Caso</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad del caso <em></em> <it></it>:*@
+                <form id="dataFormPriorizaCaso">
+
+                    <div class="alert-custom" id="alertaInfoCaso">
+                        <div class="form-group row justify-content-left">
+                            <strong class="col-sm-2">Caso: </strong>
+                            <div class="col-sm-10">
+                                <span id="PriorizaCaso_header_caso"></span>
+                            </div>
+
+                        </div>
+                        <div class="form-group row justify-content-left">
+
+                            <strong class="col-sm-2">Fecha Inicio: </strong>
+                            <div class="col-sm-2">
+                                <span id="PriorizaCaso_header_fecha_inicio"></span>
+                            </div>
+
+                            <strong class="col-sm-2">Fecha Estimada: </strong>
+                            <div class="col-sm-2">
+                                <span id="PriorizaCaso_header_fecha_estimada"></span>
+                            </div>
+
+                            <strong class="col-sm-2">Prioridad Actual: </strong>
+                            <div class="col-sm-1">
+                                <span id="PriorizaCaso_header_prioridad"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row"></div>
+
+                    <div class="form-group row">
+                        <strong class="col-sm-3 text-right align-content-center">Nueva Prioridad: </strong>
+                        <div class="col-sm-3" id="PriorizaCaso_container_prioridad">
+                            <input type="number" id="nuevaPrioridadCaso" min="1" class="form-control form-control-user" value="" />
+                        </div>
+                        <strong class="col-sm-3 text-right align-content-center">Opción Prioridad: </strong>
+                        <div class="col-sm-3" id="PriorizaCaso_container_opcion">
+                            <select id="PriorizaCaso_opcion" class="form-control form-control-user">
+                                <option value="0"></option>
+                                <option value="1">Opción 1</option>
+                                <option value="2">Opción 2</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    @*<div class="col-sm-3 justify-content-center">
+                            <input type="number" id="nuevaPrioridadCaso" min="1" class="form-control form-control-user" value="" />
+                        </div>*@
+                    <div class="alert alert-warning" role="alert" id="priorizaCasoOpciones" style="display:none;"></div>
+                    <div class="alert alert-danger" role="alert" id="priorizaCasoError" style="display:none;"></div>
+                </form>
+            </div>
+            <input type="hidden" id="indexPriorizaCaso" value="" />
+            <input type="hidden" id="userPriorizaCaso" value="" />
+            <input type="hidden" id="PriorizaCaso_Prioridad" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Priorizar", "PriorizaCaso", "CasosTareas", new
+                {
+                    id = "btnPriorizaCaso",
+                    @class = "btn btn-primary",
+               modal_name = "#mdPriorizaCaso",
+               index_name = "#indexPriorizaCaso",
+               value1_name = "#userPriorizaCaso",
+               value2_name = "#nuevaPrioridadCaso",
+               value3_name = "#PriorizaCaso_Prioridad",
+               value4_name = "#PriorizaCaso_opcion"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ModDependencia Modal-->
+<div class="modal fade" id="mdModDependencia" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Traslado de caso a dependencia</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*<div class="alert alert-primary" role="alert">*@
+                @*Indicar nuevo estado y observación de Caso No. <em></em> <it></it>:*@
+                @*</div>*@
+                @*<div></div>*@
+                <div class="card" style="padding-left: 5px; padding-right: 5px; padding-top: 10px">
+                    <form id="dataModalDependencia">
+                        @*<div class="form-group row">
+                                <label class="col-sm-2 col-form-label">Estado</label>
+                                <select id="nuevoEstado" class="col-sm-6 form-control form-control-user">
+                                    <option value="0"></option>
+                                    <option value="11">En Dependencia</option>
+                                    <option value="5">En Proceso</option>
+                                </select>
+                            </div>*@
+                        <div class="form-group justify-content-center">
+                            <label id="labelObservacion" class="justify-content-center">Observaciones del traslado:</label>
+                            <input type="text" id="nuevaObservacionDep" class="form-control form-control-user" value="" />
+                        </div>
+                        <div class="alert alert-danger" role="alert" id="asignaDependenciaError" style="display:none;">
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <input type="hidden" id="indexModDependencia" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Guardar", "AsignarDependencia", "CasosTareasController", new
+                {
+                    id = "btnModDependencia",
+                    @class = "btn btn-primary",
+                   modal_name = "#mdModDependencia",
+                   index_name = "#indexModDependencia",
+                   value1_name = "#nuevoEstado",
+                   value2_name = "#nuevaObservacionDep"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ModReanudar Modal-->
+<div class="modal fade" id="mdModReanudar" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Reanudar caso</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card" style="padding-left: 5px; padding-right: 5px; padding-top: 10px">
+                    <form id="dataModalReanudar">
+                        <div class="form-group justify-content-center">
+                            <label id="labelObservacion" class="justify-content-center">Observaciones del cambio:</label>
+                            <input type="text" id="nuevaObservacionReanudar" class="form-control form-control-user" value="" />
+                        </div>
+                        <div class="alert alert-danger" role="alert" id="reanudarError" style="display:none;">
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <input type="hidden" id="indexModReanudar" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Guardar", "Reanudar", "CasosTareasController", new
+                {
+                    id = "btnModReanudar",
+                    @class = "btn btn-primary",
+                   modal_name = "#mdModReanudar",
+                   index_name = "#indexModReanudar",
+                   value1_name = "#nuevoEstado",
+                   value2_name = "#nuevaObservacionReanudar"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdTrasladarCaso" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="TraslarModalLabel">Trasladar Caso</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="dataModal">
+
+                    <div class="form-group row justify-content-left">
+
+                        <h6><label class="col-sm-4">Coordinador</label></h6>
+
+                        <div class="col-sm-7">
+                            <select id="AsignaCoordinador" class="form-control form-control-user">
+                                <option value="0"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="TrasladaCasoError" style="display:none;">
+                    </div>
+                    @*</div>*@
+                </form>
+            </div>
+            <input type="hidden" id="ModalIDTrasladarCaso" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Trasladar", "TrasladarCaso", "CasosTareasController", new
+                {
+                    id = "btnTrasladaCasoACoordinador",
+                    @class = "btn btn-primary",
+               modal_name = "#mdTrasladarCaso",
+               index_caso = "#ModalIDTrasladarCaso",
+               index_coordinador = "#AsignaCoordinador"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enviar Estimación de tiempos-->
+<div class="modal fade" id="mdEnviarEstimacion" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Envío de cronograma de tiempos</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                ¿Desea enviar solicitud de estimación de tiempos del caso <em></em>?
+                <form id="dataModal">
+
+                    <div class="alert alert-danger" role="alert" id="EnviarEstimacionError" style="display:none;">
+                    </div>
+                    @*</div>*@
+                </form>
+            </div>
+            <input type="hidden" id="IDEnviarEstimacion" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">No</button>
+                @Html.ActionLink("Si", "EnviarEstimacionTiempos", "CasosTareasController", new
+                {
+                    id = "btnEnviarEstimacion",
+                    @class = "btn btn-primary",
+               modal_name = "#mdEnviarEstimacion",
+               index_caso = "#IDEnviarEstimacion"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="mdTrasladarCoordinacion" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Traslado de caso a otra coordinación</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                @*¿Desea Finalizar la Tarea <em></em>?*@
+                <form id="dataModalTrasladoCoordinador">
+
+                    <div class="form-group row justify-content-left">
+
+                        <h6><label class="col-sm-4">Coordinador</label></h6>
+
+                        <div class="col-sm-7">
+                            <select id="TrasladoCoordinador" class="form-control form-control-user">
+                                <option value="0"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="TrasladaCoordinadorError" style="display:none;">
+                    </div>
+                </form>
+            </div>
+            <input type="hidden" id="IDTrasladoCoordinacion" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">No</button>
+                @Html.ActionLink("Asignar", "TrasladarCoordinacion", "CasosTareasController", new
+                {
+                    id = "btnTrasladoCoordinacion",
+                    @class = "btn btn-primary",
+               modal_name = "#mdTrasladarCoordinacion",
+               index_caso = "#IDTrasladoCoordinacion",
+               index_coordinador = "#TrasladoCoordinador"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="mdRechazarCaso" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="TraslarModalLabel">Rechazo de caso</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="dataModal">
+
+                    <div class="form-group row justify-content-left">
+
+                        <h6><label class="col-sm-4">Coordinador</label></h6>
+
+                        <div class="col-sm-7">
+                            <select id="RechazaCoordinador" class="form-control form-control-user">
+                                <option value="0"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="RechazaCasoError" style="display:none;">
+                    </div>
+                    @*</div>*@
+                </form>
+            </div>
+            <input type="hidden" id="ModalIDRechazoCaso" value="" />
+            <input type="hidden" id="ModalIDRechazoRequerimiento" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Rechazar", "RechazarCaso", "CasosTareasController", new
+                {
+                    id = "btnRechazarCasoCoordinador",
+                    @class = "btn btn-primary",
+               modal_name = "#mdRechazarCaso",
+               index_caso = "#ModalIDRechazoCaso",
+               index_requerimiento = "#ModalIDRechazoRequerimiento",
+               index_coordinador = "#RechazaCoordinador"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdAsignaAnalistaR" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Asignación de Analista</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                @*¿Desea Finalizar la Tarea <em></em>?*@
+                <form id="dataModal">
+
+                    <div class="form-group row justify-content-left">
+
+                        <h6><label class="col-sm-4">Analista</label></h6>
+
+                        <div class="col-sm-7">
+                            <select id="AsignaAnalistaR" class="form-control form-control-user">
+                                <option value="0"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="AsignaCasoErrorR" style="display:none;">
+                    </div>
+                </form>
+            </div>
+            <input type="hidden" id="IDAsignarCasoR" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">No</button>
+                @Html.ActionLink("Asignar", "AsignarRequerimientoAnalistaRechazo", "CasosTareasController", new
+                {
+                    id = "btnAsignaAnalistaRechazo",
+                    @class = "btn btn-primary",
+               modal_name = "#mdAsignaAnalistaR",
+               index_caso = "#IDAsignarCasoR",
+               index_analista = "#AsignaAnalistaR"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ModDependencia Modal-->
+<div class="modal fade" id="mdContinuaDependencia" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Continuar la dependencia de Tarea</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="card" style="padding-left: 5px; padding-right: 5px; padding-top: 10px">
+                    <form id="dataModalContinuaDependencia">
+                        <div class="form-group justify-content-center">
+                            <label class="justify-content-center">Nueva fecha de compromiso</label>
+                            <input type="date" id="nuevaFechaCompromiso" class="form-control form-control-user" value="" pattern="\d{2}/\d{2}/\d{4}" />
+                        </div>
+                        <div class="form-group justify-content-center">
+                            <label id="labelResponsable" class="justify-content-center">Responsable de resolver la dependencia</label>
+                            <input type="text" id="responsableContinuaDependencia" class="form-control form-control-user" value="" />
+                        </div>
+                        <div class="form-group justify-content-center">
+                            <label id="labelObservacion" class="justify-content-center">Observaciones</label>
+                            <input type="text" id="observacionesContinuaDependencia" class="form-control form-control-user" value="" />
+                        </div>
+                        <div class="alert alert-danger" role="alert" id="continuaDependenciaError" style="display:none;">
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <input type="hidden" id="indexContinuaDependencia" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Guardar", "ContinuarDependencia", "CasosTareasController", new
+                {
+                    id = "btnContinuaDependencia",
+                    @class = "btn btn-primary",
+               modal_name = "#mdContinuaDependencia",
+               index_name = "#indexContinuaDependencia",
+               value1_name = "#nuevaFechaCompromiso",
+               value2_name = "#observacionesContinuaDependencia",
+               value3_name = "#responsableContinuaDependencia"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdFinalizaDependencia" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Finaliza la dependencia de Tarea</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                ¿Desea Finalizar la dependencia de la tarea <em></em>?
+                <form id="dataModal">
+
+                    @*<div class="form-group row">
+                            <label class="col-sm-2 col-form-label">Priorizar la tarea</label>
+                            <select id="nuevoEstadoTarea" class="col-sm-6 form-control form-control-user">
+                                <option value="1">No</option>
+                                <option value="2">Si</option>
+                            </select>
+                        </div>*@
+
+                    <div class="alert alert-danger" role="alert" id="FinalizaDependenciaError" style="display:none;">
+                    </div>
+                    @*</div>*@
+                </form>
+            </div>
+            <input type="hidden" id="IDFinalizaDependenciaTarea" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">No</button>
+                @Html.ActionLink("Si", "FinalizarDependencia", "CasosTareas", new
+                {
+                    id = "btnFinalizaDependencia",
+                    @class = "btn btn-primary",
+               modal_name = "#mdFinalizaDependencia",
+               index_name = "#IDFinalizaDependenciaTarea",
+               value1_name = "#nuevoEstadoTarea"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Finalizar Tarea Modal-->
+
+<div class="modal fade" id="mdEliminarDependencia" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Eliminar dependencia de tarea</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                ¿Desea Eliminar la Dependencia <em></em>?
+                <form id="dataModal_EliminarDependencia">
+
+                    <div class="alert alert-danger" role="alert" id="EliminarDependenciaError" style="display:none;">
+                    </div>
+                    @*</div>*@
+                </form>
+            </div>
+            <input type="hidden" id="ModalIDDependendencia" value="" />
+            <input type="hidden" id="ModalIDTareaDependencia" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">No</button>
+                @Html.ActionLink("Si", "EliminarDependencia", "CasosTareas", new
+                {
+                    id = "btnEliminarDependencia",
+                    @class = "btn btn-primary",
+               modal_name = "#mdEliminarDependencia",
+               value1_name = "#ModalIDTareaDependencia",
+               value2_name = "#ModalIDDependendencia"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Eliminar Tarea Modal-->
+<div class="modal fade" id="mdEliminarTarea" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="EliminarTareaModalLabel">Eliminar Tarea</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @*Indicar orden de prioridad para tareas del caso <em></em> <it></it>:*@
+                ¿Desea Eliminar la Tarea <em></em>?
+                <form id="dataModal_EliminarTarea">
+                    <div class="alert alert-danger" role="alert" id="EliminarTareaError" style="display:none;"></div>
+                </form>
+            </div>
+            <input type="hidden" id="ModalIDCasoTarea" value="" />
+            <input type="hidden" id="ModalIDTarea" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">No</button>
+                @Html.ActionLink("Si", "InactivarTarea", "CasosTareas", null, new
+                {
+                    id = "btnEliminarTarea",
+                    @class = "btn btn-primary",
+               modal_name = "#mdEliminarTarea",
+               value1_name = "#ModalIDTarea",
+               value2_name = "#ModalIDCasoTarea"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!---------------------------------------- Modal para cambiar priporidad de un caso no asignado - INICIO (Temporal) ----------------------------------------------->
+<div class="modal fade" id="mdPriorizaCasoNoAsignado" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Prioriza Caso</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                Indicar orden de prioridad para el caso <em></em> <it></it>:
+                <form id="dataFormPriorizaCasoNoAsignado">
+                    <div class="col-sm-3 justify-content-center">
+                        <input type="number" id="nuevaPrioridadCasoNoAsignado" min="1" class="form-control form-control-user" value="" />
+                    </div>
+                    <div class="alert alert-danger" role="alert" id="priorizaCasoNoAsignadoError" style="display:none;">
+                    </div>
+
+                </form>
+            </div>
+            <input type="hidden" id="indexPriorizaCasoNoAsignado" value="" />
+            <input type="hidden" id="IdCasoNoAsignado" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Guardar", "PriorizaCasoNoAsignado", "CasosTarea", new
+                {
+                    id = "btnPriorizaCasoNoAsignado",
+                    @class = "btn btn-primary",
+               modal_name = "#mdPriorizaCasoNoAsignado",
+               index_name = "#indexPriorizaCasoNoAsignado",
+               value1_name = "#IdCasoNoAsignado",
+               value2_name = "#nuevaPrioridadCasoNoAsignado",
+               url_success = Url.Action("Index", "Tarea")
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="mdCorrigeInfoCaso" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Corregir información del caso</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="dataCorrigeInfoCaso">
+
+                    <div class="card shadow mb-4">
+                        <!-- Card Content - Collapse -->
+
+                        <div class="alert-custom" id="IC_info" data-id-caso="-1">
+                            <div class="form-group row justify-content-left">
+                                <strong class="col-sm-2">Caso: </strong>
+                                <div class="col-sm-10">
+                                    <span id="IC_header_caso"></span>
+                                </div>
+
+                            </div>
+                            <div class="form-group row justify-content-left">
+
+                                <strong class="col-sm-2">Fecha Inicio: </strong>
+                                <div class="col-sm-2">
+                                    <span id="IC_header_fecha_inicio"></span>
+                                </div>
+
+                                <strong class="col-sm-2">Fecha Estimada: </strong>
+                                <div class="col-sm-2">
+                                    <span id="IC_header_fecha_compromiso"></span>
+                                </div>
+
+                                <strong class="col-sm-3">Horas Finalización: </strong>
+                                <div class="col-sm-1">
+                                    <span id="IC_header_fecha_fin"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row justify-content-left">
+                        <label for="IC_fechaInicio" class="col-sm-2  col-form-label">Fecha de Inicio:</label>
+                        <div class="col-sm-4">
+                            <input type="datetime-local" id="IC_fechaInicio" name="IC_fechaInicio" class="form-control form-control-user">
+                        </div>
+
+                        <label for="IC_fechaEstimada" class="col-sm-2  col-form-label">Fecha Estimada:</label>
+                        <div class="col-sm-4">
+                            <input type="datetime-local" id="IC_fechaEstimada" name="IC_fechaEstimada" class="form-control form-control-user">
+                        </div>
+
+                    </div>
+                    <div class="form-group row justify-content-left">
+                        <label for="IC_fechaFin" class="col-sm-2  col-form-label">Fecha Fin:</label>
+                        <div class="col-sm-4">
+                            <input type="datetime-local" id="IC_fechaFin" name="IC_fechaFin" class="form-control form-control-user">
+                        </div>
+                    </div>
+
+                    <div class="form-group row justify-content-left">
+
+                        <div class="col-sm-2">
+                            <strong><label for="nuevaObservacion" id="labelObservacion" style="vertical-align:central">Comentarios del Cambio:</label></strong>
+                        </div>
+                        <div class="col-sm-10">
+                            <textarea id="IC_observaciones" name="IC_observaciones" class="form-control form-control-user" placeholder="Comentarios" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="CorrigeCasoError" style="display:none;">
+                    </div>
+                </form>
+            </div>
+            <input type="hidden" id="IC_IDCaso" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Cambiar", "CambiaInformacionCaso", "CasosTareasController", new
+                {
+                    id = "btnCambiaInformacionCaso",
+                    @class = "btn btn-primary",
+               modal_name = "#mdCorrigeInfoCaso",
+               index_name = "#IC_IDCaso",
+               value1_name = "#IC_fechaInicio",
+               value2_name = "#IC_fechaEstimada",
+               value3_name = "#IC_fechaFin"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="mdCorrigeInfoTarea" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Corregir información de Tarea</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="dataCorrigeInfoTarea">
+
+                    <div class="card shadow mb-4">
+                        <!-- Card Content - Collapse -->
+
+                        <div class="alert-custom" id="IT_info">
+                            <div class="form-group row justify-content-left">
+                                <strong class="col-sm-2">Tarea: </strong>
+                                <div class="col-sm-10">
+                                    <span id="IT_header_tarea"></span>
+                                </div>
+
+                            </div>
+                            <div class="form-group row justify-content-left">
+
+                                <strong class="col-sm-2">Fecha Inicio: </strong>
+                                <div class="col-sm-2">
+                                    <span id="IT_header_fecha_inicio"></span>
+                                </div>
+
+                                <strong class="col-sm-2">Fecha Estimada: </strong>
+                                <div class="col-sm-2">
+                                    <span id="IT_header_fecha_compromiso"></span>
+                                </div>
+
+                                <strong class="col-sm-2">Fecha Fin: </strong>
+                                <div class="col-sm-2">
+                                    <span id="IT_header_fecha_fin"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row justify-content-left">
+                        <label for="IT_fechaInicio" class="col-sm-2  col-form-label">Fecha de Inicio:</label>
+                        <div class="col-sm-4">
+                            <input type="datetime-local" id="IT_fechaInicio" name="IT_fechaInicio" class="form-control form-control-user">
+                        </div>
+
+                        <label for="IT_fechaEstimada" class="col-sm-2  col-form-label">Fecha Estimada:</label>
+                        <div class="col-sm-4">
+                            <input type="datetime-local" id="IT_fechaEstimada" name="IT_fechaEstimada" class="form-control form-control-user">
+                        </div>
+
+                    </div>
+                    <div class="form-group row justify-content-left">
+                        <label for="IT_fechaFin" class="col-sm-2  col-form-label">Fecha Fin:</label>
+                        <div class="col-sm-4">
+                            <input type="datetime-local" id="IT_fechaFin" name="IT_fechaFin" class="form-control form-control-user">
+                        </div>
+
+                        <label for="IT_vencimiento" class="col-sm-2  col-form-label">Vencimientos:</label>
+                        <div class="col-sm-4">
+                            <input type="number" id="IT_vencimiento" name="IT_vencimiento" class="form-control form-control-user">
+                        </div>
+
+                    </div>
+
+                    <div class="form-group row justify-content-left">
+
+                        <div class="col-sm-2">
+                            <strong><label for="IT_comentariosCambio" id="IT_labelObservacion" style="vertical-align:central">Comentarios del Cambio:</label></strong>
+                        </div>
+                        <div class="col-sm-10">
+                            <textarea id="IT_comentariosCambio" name="IT_comentariosCambio" class="form-control form-control-user" placeholder="Comentarios" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="CorrigeTareaError" style="display:none;">
+                    </div>
+                </form>
+            </div>
+            <input type="hidden" id="IT_IDCaso" value="" />
+            <input type="hidden" id="IT_IDTarea" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Cambiar", "CorrigeInformacionTarea", "CasosTareasController", new
+                {
+                    id = "btnCambiaInformacionTarea",
+                    @class = "btn btn-primary",
+               modal_name = "#mdCorrigeInfoTarea",
+               index_tarea = "#IT_IDTarea",
+               index_caso = "#IT_IDCaso",
+               value1_name = "#IT_fechaInicio",
+               value2_name = "#IT_fechaEstimada",
+               value3_name = "#IT_fechaFin",
+               value4_name = "#IT_vencimiento",
+               value5_name = "#IT_comentariosCambio"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="mdCorrigeClasificaTarea" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Corregir Clasificación de Tarea</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="dataCorrigeClasificaTarea">
+
+                    <div class="card shadow mb-4">
+                        <!-- Card Content - Collapse -->
+
+                        <div class="alert-custom" id="ICT_info">
+                            <div class="form-group row justify-content-left">
+                                <strong class="col-sm-2">Tarea: </strong>
+                                <div class="col-sm-10">
+                                    <span id="ICT_header_tarea"></span>
+                                </div>
+                            </div>
+                            <div class="form-group row justify-content-left">
+
+                                <strong class="col-sm-2">Fecha Inicio: </strong>
+                                <div class="col-sm-2">
+                                    <span id="ICT_header_fecha_inicio"></span>
+                                </div>
+
+                                <strong class="col-sm-2">Fecha Estimada: </strong>
+                                <div class="col-sm-2">
+                                    <span id="ICT_header_fecha_compromiso"></span>
+                                </div>
+
+                                <strong class="col-sm-2">Fecha Fin: </strong>
+                                <div class="col-sm-2">
+                                    <span id="ICT_header_fecha_fin"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row justify-content-left">
+                        <label for="ICT_clasifica_anterior" class="col-sm-2  col-form-label">Clasificación Actual:</label>
+                        <div class="col-sm-4">
+                            <select id="ICT_clasifica_anterior" class="form-control form-control-user"></select>
+                            @*<input type="datetime-local" id="ICT_fechaInicio" name="ICT_fechaInicio" class="form-control form-control-user">*@
+                        </div>
+
+                        <label for="ICT_refitop_anterior" class="col-sm-2  col-form-label">Referencia iTop:</label>
+                        <div class="col-sm-4">
+                            <input type="text" id="ICT_refitop_anterior" name="ICT_refitop_anterior" class="form-control form-control-user">
+                        </div>
+                    </div>
+
+                    <div class="form-group row justify-content-left">
+
+                        <label for="ICT_clasifica_nuevo" class="col-sm-2  col-form-label">Clasificación Nueva:</label>
+                        <div class="col-sm-4">
+                            <select id="ICT_clasifica_nuevo" class="form-control form-control-user"></select>
+                        </div>
+
+                        <label for="ICT_refitop_nuevo" class="col-sm-2  col-form-label">Referencia iTop:</label>
+                        <div class="col-sm-4">
+                            <input type="text" id="ICT_refitop_nuevo" name="ICT_refitop_nuevo" class="form-control form-control-user" data-val-regex-pattern="^[R][\-][0-9]*$">
+                        </div>
+                    </div>
+
+                    <div class="form-group row justify-content-left">
+
+                        <div class="col-sm-2">
+                            <strong><label for="nuevaObservacion" id="ICT_labelObservacion" style="vertical-align:central">Comentarios del Cambio:</label></strong>
+                        </div>
+                        <div class="col-sm-10">
+                            <textarea id="ICT_comentariosCambio" name="ICT_comentariosCambio" class="form-control form-control-user" placeholder="Comentarios" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="CorrigeClasificaTareaError" style="display:none;">
+                    </div>
+                </form>
+            </div>
+            <input type="hidden" id="ICT_IDCaso" value="" />
+            <input type="hidden" id="ICT_IDTarea" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Cambiar", "CorrigeClasificacionTarea", "CasosTareasController", new
+                {
+                    id = "btnCambiaClasificaTarea",
+                    @class = "btn btn-primary",
+               modal_name = "#mdCorrigeClasificaTarea",
+               index_tarea = "#ICT_IDTarea",
+               index_caso = "#ICT_IDCaso",
+               value1_name = "#ICT_clasifica_anterior",
+               value2_name = "#ICT_clasifica_nuevo",
+               value3_name = "#ICT_comentariosCambio"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdTrasladaAreaCaso" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Traslada el caso a otra área</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="dataModalTrasladaArea">
+
+                    <div class="form-group row justify-content-left">
+
+                        <h6><label class="col-sm-4">Coordinador</label></h6>
+
+                        <div class="col-sm-7">
+                            <select id="TA_CoordinadorArea" class="form-control form-control-user">
+                                <option value="0"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="TA_TrasladaAreaError" style="display:none;">
+                    </div>
+                </form>
+            </div>
+            <input type="hidden" id="IDTrasladaAreaCaso" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">No</button>
+                @Html.ActionLink("Trasladar", "TrasladarCoordinacionExterna", "CasosTareasController", new
+                {
+                    id = "btnTrasladaCasoArea",
+                    @class = "btn btn-primary",
+               modal_name = "#mdTrasladaAreaCaso",
+               index_caso = "#IDTrasladaAreaCaso",
+               index_coordinador = "#TA_CoordinadorArea"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="mdCorrigeFechaInicio" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Define Fecha de Inicio</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="dataCorrigeFechaInicio">
+
+                    <div class="card shadow mb-4">
+                        <!-- Card Content - Collapse -->
+
+                        <div class="alert-custom" id="FI_info" data-id-caso="-1">
+                            <div class="form-group row justify-content-left">
+                                <strong class="col-sm-2">Caso: </strong>
+                                <div class="col-sm-10">
+                                    <span id="FI_header_caso"></span>
+                                </div>
+
+                            </div>
+                            <div class="form-group row justify-content-left">
+
+                                <strong class="col-sm-2">Fecha Inicio: </strong>
+                                <div class="col-sm-2">
+                                    <span id="FI_header_fecha_inicio"></span>
+                                </div>
+
+                                <strong class="col-sm-2">Fecha Estimada: </strong>
+                                <div class="col-sm-2">
+                                    <span id="FI_header_fecha_compromiso"></span>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row justify-content-left">
+                        <label for="FI_fechaInicio" class="col-sm-2  col-form-label">Fecha de Inicio:</label>
+                        <div class="col-sm-5">
+                            <input type="datetime-local" id="FI_fechaInicio" name="FI_fechaInicio" class="form-control form-control-user">
+                        </div>
+                    </div>
+
+
+                    <div class="form-group row justify-content-left">
+
+                        <div class="col-sm-2">
+                            <strong><label for="nuevaObservacion" id="labelObservacion" style="vertical-align:central">Comentarios del Cambio:</label></strong>
+                        </div>
+                        <div class="col-sm-10">
+                            <textarea id="FI_observaciones" name="FI_observaciones" class="form-control form-control-user" placeholder="Comentarios" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="CorrigeCasoError" style="display:none;">
+                    </div>
+                </form>
+            </div>
+            <input type="hidden" id="FI_IDCaso" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancelar</button>
+                @Html.ActionLink("Cambiar", "CambiaInformacionCaso", "CasosTareasController", new
+                {
+                    id = "btnCambiaInformacionCaso",
+                    @class = "btn btn-primary",
+               modal_name = "#mdCorrigeFechaInicio",
+               index_name = "#FI_IDCaso",
+               value1_name = "#FI_fechaInicio"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="mdReAsignaAnalista" tabindex="-1" role="dialog" aria-labelledby="messageModalLabel" aria-hidden="true">
+    <div class="modal-dialog  modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header modal-header-info bg-info text-white">
+                <h5 class="modal-title" id="FinalizarModalLabel">Asignación de Analista</h5>
+                <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="RE_dataModal">
+
+                    <div class="form-group row justify-content-left">
+
+                        <h6><label class="col-sm-4">Analista</label></h6>
+
+                        <div class="col-sm-7">
+                            <select id="RE_IDAnalistaNuevo" class="form-control form-control-user">
+                                <option value="0"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger" role="alert" id="RE_AsignaCasoError" style="display:none;">
+                    </div>
+                </form>
+            </div>
+            <input type="hidden" id="RE_IDAnalistaActual" value="" />
+            <input type="hidden" id="RE_IDCaso" value="" />
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-dismiss="modal">No</button>
+                @Html.ActionLink("Asignar", "ReAsignarCasoAnalista", "CasosTareasController", new
+                {
+                    id = "btnReAsignaAnalista",
+                    @class = "btn btn-primary",
+               modal_name = "#mdReAsignaAnalista",
+               index_caso = "#RE_IDCaso",
+               index_analista_actual = "#RE_IDAnalistaActual",
+               index_analista_nuevo = "#RE_IDAnalistaNuevo"
+           })
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="contextMenu" class="dropdown-menu" aria-labelledby="menuCaso1552" style="display: none; position: absolute; z-index: 10000; will-change: transform; top: 0px; left: 0px;">  <a class="dropdown-item" href="javascript:void(0)" data-href="#opTabCasos" data-id="1552" data-clasificacion="Caso" data-requerimiento="1139">Tareas</a><a class="dropdown-item" href="javascript:void(0)" data-href="/WebGrupoTRT_GestionTI/Caso/View" data-id="1552" data-clasificacion="Caso" data-requerimiento="1139">Ver</a><a class="dropdown-item" href="javascript:void(0)" data-href="/WebGrupoTRT_GestionTI/CasosTarea/PriorizaCaso" data-id="1552" data-clasificacion="Caso" data-requerimiento="1139">Priorizar</a><a class="dropdown-item" href="javascript:void(0)" data-href="/WebGrupoTRT_GestionTI/Caso/Delete" data-id="1552" data-clasificacion="Caso" data-requerimiento="1139">Eliminar</a><a class="dropdown-item" href="javascript:void(0)" data-href="#" data-id="1552" data-clasificacion="Caso" data-requerimiento="1139">Reasignar</a></div>
+@*<div id="contextMenu" class="dropdown-menu" aria-labelledby="menuCaso1552" x-placement="top-start" style="position: absolute; will-change: transform; top: 0px; left: 0px; transform: translate3d(0px, -86px, 0px);">  <a class="dropdown-item" href="javascript:void(0)" data-href="#opTabCasos" data-id="1552" data-clasificacion="Caso" data-requerimiento="1139">Tareas</a><a class="dropdown-item" href="javascript:void(0)" data-href="/WebGrupoTRT_GestionTI/Caso/View" data-id="1552" data-clasificacion="Caso" data-requerimiento="1139">Ver</a><a class="dropdown-item" href="javascript:void(0)" data-href="/WebGrupoTRT_GestionTI/CasosTarea/PriorizaCaso" data-id="1552" data-clasificacion="Caso" data-requerimiento="1139">Priorizar</a><a class="dropdown-item" href="javascript:void(0)" data-href="/WebGrupoTRT_GestionTI/Caso/Delete" data-id="1552" data-clasificacion="Caso" data-requerimiento="1139">Eliminar</a><a class="dropdown-item" href="javascript:void(0)" data-href="#" data-id="1552" data-clasificacion="Caso" data-requerimiento="1139">Reasignar</a></div>*@
+
+
+@Html.Partial("~/Views/CasosTareas/Partials/Tarea/_mdPriorizacionesTarea.cshtml")
+@Html.Partial("~/Views/CasosTareas/Partials/Tarea/_mdVencimientosTarea.cshtml")
+@Html.Partial("~/Views/CasosTareas/Partials/Tarea/Dependencia/_mdSolicitudDependencia.cshtml")
+
+@section Styles{
+    <style>
+        .set-to-right {
+            padding-top: 3.5rem;
+        }
+
+        body {
+            font-size: 0.70rem;
+        }
+
+        div.dropdown-menu {
+            /*background-color: #f8f9fc;*/
+            background-color: rgb(218, 231, 244);
+            font-size: 0.75rem !important;
+            z-index: 10000;
+        }
+
+        /*/#f8f9fc*/
+
+        .dropdown-item:hover {
+            background-color: #e6eef9;
+        }
+
+        /*Submenus*/
+        /*        .dropdown-submenu {
+            position: relative;
+        }
+
+            .dropdown-submenu > .dropdown-menu {
+                top: 0;
+                left: 100%;
+                margin-top: -1px;
+                display: none;
+            }
+
+            .dropdown-submenu:hover > .dropdown-menu {
+                display: block;
+            }
+
+            .dropdown-submenu > a::after {
+                float: right;
+                margin-top: 5px;
+                margin-right: 5px;
+                font-size: 0.6rem;
+            }*/
+
+        table.dataTable {
+            table-layout: fixed;
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        table thead th {
+            /*box-shadow: 0 5px 10px #e1e5ee;*/
+            font-weight: 600;
+            border-bottom-width: 1px;
+            padding-top: 0rem;
+            padding-bottom: 0rem;
+            color: #181C32;
+            white-space: nowrap;
+        }
+
+        table.dataTable th {
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        table.dataTable td {
+            white-space: normal;
+            word-wrap: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0.10rem !important;
+            vertical-align: middle;
+            color: #667;
+        }
+
+        .td-dropdown-menu {
+            white-space: nowrap !important;
+            overflow: visible !important;
+            text-overflow: ellipsis !important;
+            text-align: left !important;
+        }
+
+        table.dataTable thead th {
+            text-align: center;
+            /*            color: #41444c;
+            background-color: #d4ddf7;*/
+            color: #FFFFFF;
+            background-color: #818ce4; /*6c7ae0;*/
+            padding-top: 0.85rem;
+            padding-bottom: 0.5rem;
+            white-space: nowrap !important;
+        }
+
+        table.dataTable tbody tr:hover {
+            background-color: #ececff;
+            cursor: pointer;
+        }
+
+        /*        table.dataTable tbody tr.selected {
+            background-color: #ececff !important;
+        }*/
+
+        table.dataTable tbody tr.selected > * {
+            box-shadow: inset 0 0 0 9999px rgba(2, 117, 216, 0.60) !important;
+            /*background-color: #ececff !important;*/
+        }
+
+        table.bordered th {
+            border-right: 0px solid whitesmoke;
+        }
+
+            table.bordered th:last-child {
+                border-right-width: 0;
+            }
+
+        table.bordered td {
+            border-top-width: 0;
+            border-left-width: 0;
+            border-right: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+            padding: 0.10rem !important;
+            white-space: nowrap;
+        }
+
+            table.bordered td:last-child {
+                border-right-width: 0;
+            }
+
+        .dataTables_scrollHead {
+            background: steelblue;
+            border-left: solid 1px steelblue !important;
+            border-right: solid 1px steelblue !important;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+
+            .dataTables_scrollHead table {
+                border: none;
+                margin-top: 0px !important;
+            }
+
+            .dataTables_scrollHead thead th {
+                border-top: none;
+                border-bottom: none;
+            }
+
+        .dataTables_scrollHead {
+            width: 100% !important;
+            padding: 0 !important;
+        }
+
+        .dataTables_scrollBody {
+            border-left: solid 1px #676a6c;
+            border-right: solid 1px #676a6c;
+            border-bottom: solid 1px #676a6c;
+        }
+
+        .dataTables_filter {
+            float: left !important;
+            text-align: left !important; /* Optional: ensures text within the filter aligns left */
+        }
+
+        div.dataTables_wrapper div.dataTables_filter input {
+            width: 250px; /* Example: set a fixed width */
+            /* Or use a percentage for responsiveness */
+            /* width: 100%; */
+        }
+
+        /*Quita espacio a la izquierda del elemento de carta, para hacer mas espacio al grid*/
+        .card-body {
+            padding: 0.25rem;
+        }
+        /*Agregar padding a los filtros*/
+        .form-row {
+            padding: 0.25rem;
+        }
+
+        .nav-pills .pill-success .nav-link.active {
+            background-color: #fffdfb;
+            /* border-style: solid;
+            border-color: #edf5ff;
+            border-width: 1px;*/
+            color: #7699dd;
+            /*color: #f6c23e*/
+            font-size: 0.85rem;
+            font-weight: 700;
+            border-radius: 0px;
+            border-width: 0px;
+            box-shadow: rgba(0,0,0,0.25) 0px 54px 55px, rgba(0,0,0,0.12) 0px -12px 30px, rgba(0,0,0,0.12) 0px 4px 6px, rgba(0,0,0,0.17) 0px 12px 13px, rgba(0,0,0,0.09) 0px -3px 5px;
+        }
+
+        .nav-pills .pill-success .nav-link:not(.active) {
+            background-color: #fffdfb;
+            color: #6f747b;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 0px;
+            border-width: 0px;
+            box-shadow: rgba(149,157,165,0.2) 0px 8px 24px;
+        }
+
+        .sin-espacios tr {
+            margin: 0;
+            padding: 0;
+            border-collapse: collapse;
+        }
+
+        .scrollmenu {
+            display: flex;
+            /*background-color:#333;*/
+            /*overflow: auto;*/
+            white-space: nowrap;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .header-titulos-multiselect-default {
+            font-size: 0.80rem;
+        }
+
+        .boton-opciones-grid {
+            height: 20px;
+            width: 20px;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .imagen-boton-opciones-grid {
+            height: 10px;
+            width: 10px;
+            position: relative;
+            display: inline-block;
+            margin: 0 !important;
+            padding: 0 !important;
+            margin-left: -5px !important;
+            margin-top: -10px !important;
+        }
+
+        .icon-badge-group .icon-badge-container {
+            /*display: inline-block;*/
+            margin-left: 1px;
+        }
+
+            .icon-badge-group .icon-badge-container:first-child {
+                margin-left: 0
+            }
+
+        .icon-badge-container {
+            margin-top: 1px;
+            position: relative;
+        }
+
+        .icon-badge-icon {
+            /*font-size: 300px;*/
+            position: relative;
+        }
+
+        .icon-badge {
+            background-color: red;
+            font-size: 12px;
+            color: white;
+            text-align: center;
+            width: 5px;
+            height: 5px;
+            border-radius: 35%;
+            position: relative;
+            top: 0px;
+            left: 0px;
+        }
+
+        .selector-priorizar {
+            border-bottom: solid;
+            border-color: cornflowerblue;
+            padding-bottom: 5px;
+        }
+
+        .tarea-principal {
+            font-weight: bold;
+        }
+
+        .fondo-filtros {
+            background-color: #f2f3f729;
+            /*background-color: #d4ddf730;*/
+        }
+
+        /**/
+        #contextMenu {
+            display: none;
+            position: absolute;
+            z-index: 10000;
+            min-width: 220px;
+        }
+
+        .dropdown-submenu {
+            position: relative;
+        }
+
+            .dropdown-submenu > .dropdown-menu {
+                top: 0;
+                left: 100%;
+                margin-top: -1px;
+                display: none;
+            }
+
+            .dropdown-submenu:hover > .dropdown-menu {
+                display: block;
+            }
+
+            .dropdown-submenu > a::after {
+                content: "▶";
+                float: right;
+                margin-right: 5px;
+            }
+
+        div.dropdown-menu i {
+            width: 15px;
+        }
+
+
+        /*Clases para el fondo del backend*/
+        .bg-caso-asignado {
+            background-color: rgb(248,249,250) !important;
+            color: rgb(33,37,41) !important;
+            /*            background-color: rgb(214,216,219) !important;
+            color: rgb(27,30,33) !important;*/
+            /*            background-color: rgb(248,249,250) !important;
+            color: rgb(33,37,41) !important;*/
+        }
+
+        .bg-caso-activo {
+            /*background-color: rgb(230,255,244) !important;*/
+            background-color: rgb(207,242,232) !important;
+            color: rgb(15,81,50) !important;
+            /*background-color: rgb(209,231,221) !important;
+            color: rgb(15,81,50) !important;*/
+            /*            background-color: #d1e7dd !important;
+            color: 	#0f5132 !important;*/
+        }
+
+        .bg-caso-proceso {
+            background-color: rgb(219,243,232) !important;
+            color: rgb(15,81,50) !important;
+        }
+
+        .bg-caso-cronograma-rechazado {
+            background-color: #ffe5b4 !important;
+            color: #7a4f01 !important;
+        }
+
+        .bg-caso-cronograma-enviado {
+            background-color: #fff3cd !important;
+            color: #664d03 !important;
+        }
+
+        .bg-caso-analisis {
+            background-color: #eaecee !important;
+            color: #212529 !important;
+            /*            background-color: rgb(248,249,250) !important;
+            color: rgb(33,37,41) !important;*/
+        }
+
+        .bg-caso-dependencia {
+            background-color: #cfe2ff !important;
+            color: #084298 !important;
+        }
+
+        .bg-caso-vencido {
+            background-color: rgb(214,216,219) !important;
+            color: rgb(27,30,33) !important;
+            /*            background-color: #eaecee !important;
+            color: #212529 !important;*/
+        }
+
+        .bg-caso-default {
+            background-color: #fafafa !important;
+            color: #212529 !important;
+        }
+
+        .dataTable-boton {
+            border: none !important;
+        }
+    </style>
+}
+
+@section Scripts {
+    <link href="~/Content/tabs.css" rel="stylesheet" type="text/css" />
+
+    @*<script type="text/javascript" src="~/Scripts/popper.js"></script>*@
+    <script type="text/javascript" src="~/Scripts/multiselect.js"></script>
+    <script type="text/javascript" src="~/Scripts/dataTables.rowReorder.js"></script>
+    <script type="text/javascript" src="~/Scripts/dataTables.select.js"></script>
+    @*<script type="text/javascript" src="~/Scripts/ColReorderWithResize.js"></script>*@
+    <script type="text/javascript" src="~/Scripts/dataTables.scroller.js"></script>
+    <script type="text/javascript" src="~/Scripts/colResizable-1.6.js"></script>
+
+    <link href="~/Content/multiselect.css" rel="stylesheet" type="text/css" />
+    <link href="~/Content/rowReorder.bootstrap4.css" rel="stylesheet" type="text/css" />
+    <link href="~/Content/select.bootstrap4.css" rel="stylesheet" type="text/css" />
+    <link href="~/Content/scroller.bootstrap4.css" rel="stylesheet" type="text/css" />
+    <link href="~/Content/daterangepicker.css" rel="stylesheet" />
+    @*<link href="~/Content/contextmenu.css" rel="stylesheet" />*@
+    <script src="~/Scripts/moment.min.js"></script>
+    <script src="~/Scripts/daterangepicker.js"></script>
+    <script src="~/Scripts/Utils/Tarea/Dependencia/SolicitudDependencia.js"></script>
+    <script type="text/javascript" src="~/Scripts/Utils/Casos/CasosAsignados.js"></script>
+    @*<link href="~/Content/botones.css" rel="stylesheet" type="text/css" />*@
+
+
+
+    <script type="text/javascript">
+        $(function () {
+
+            var url = '';
+            var content;
+            var lstAreas = @Html.Raw(Json.Encode(@ViewBag.mLstArea));
+            var lstAreaSolicitante = @Html.Raw(Json.Encode(@ViewBag.mLstAreaSolicitante));
+            var EsUsuarioArea = false;//@Html.Raw(Json.Encode(@ViewBag.mEsUsuarioArea));
+            var casoDefault = @Html.Raw(Json.Encode(@ViewBag.casoDefault));
+            var casoEstado = @Html.Raw(Json.Encode(@ViewBag.ca_estado_caso));
+            var vca_titulo = @Html.Raw(Json.Encode(@ViewBag.ca_titulo));
+            var vca_itop = @Html.Raw(Json.Encode(@ViewBag.ca_iTop));
+            var vnombreAnalista = @Html.Raw(Json.Encode(@ViewBag.nombreAnalista));
+            var vca_desc_estado = @Html.Raw(Json.Encode(@ViewBag.ca_desc_estado));
+            var EsCoordinador = @Html.Raw(Json.Encode(@ViewBag.mEsCoordinador));
+            var EsJefe = @Html.Raw(Json.Encode(@ViewBag.mEsJefe));
+            var lstCoordinacion = @Html.Raw(Json.Encode(@ViewBag.mLstCoordinacion));
+
+            var vca_avance = @Html.Raw(Json.Encode(@ViewBag.ca_porcentaje_avance));
+            var vca_fecha_inicio = @Html.Raw(Json.Encode(@ViewBag.ca_fecha_inicio));
+            var vca_fecha_compromiso = @Html.Raw(Json.Encode(@ViewBag.ca_fecha_compromiso));
+
+            var usr_slt = "casos_analista";
+            var cas_slt = "casos_area";
+            var est_slt = "casos_estado";
+            var are_slt = "casos_area_solicitante";
+
+            $('#casos_area').html("");
+            $('#casos_area').empty();
+
+            $.each(lstAreas, function (index, item) {
+                            content = "<option value='" + item.ar_id_area + "'>" + item.ar_descripcion + "</option>";
+                $('#casos_area').append(content);
+                        });
+
+            inicializaMultiSelect(cas_slt);
+            //Cargar lista de estados de casos
+            var lstEstados = @Html.Raw(Json.Encode(@ViewBag.mLstEstado));
+
+            $('#casos_estado').html("");
+            $('#casos_estado').empty();
+
+            $.each(lstEstados, function (index, item) {
+
+                if (item.es_id_estado != 6) {
+                    content = "<option value='" + item.es_id_estado + "' selected='true'>" + item.es_descripcion + "</option>";
+                }
+                else {
+                    content = "<option value='" + item.es_id_estado + "'>" + item.es_descripcion + "</option>";
+                }
+
+                $('#casos_estado').append(content);
+            });
+            inicializaMultiSelect(est_slt);
+
+            var lstAnalista = @Html.Raw(Json.Encode(@ViewBag.mLstAnalista));//Cargar lista de Analistas
+
+
+            $('#casos_analista').html("");
+            $('#casos_analista').empty();
+
+
+            if (!EsUsuarioArea) { // Validar para que el combobox no se muestre si el usuario es por area
+
+                $.each(lstAnalista, function (index, item) {
+
+                    content = "<option value='" + item.us_id_usuario + "' selected='true'>" + item.us_nombre + "</option>"; //content = "<option value='" + item.us_id_usuario + "'>" + item.us_nombre + "</option>";
+                    $('#casos_analista').append(content);
+                });
+
+                inicializaMultiSelect(usr_slt);
+            }
+
+
+            $('#casos_area_solicitante').html("");
+            $('#casos_area_solicitante').empty();
+
+            $.each(lstAreaSolicitante, function (index, item) {
+                content = "<option value='" + item.ar_id_area + "'>" + item.ar_descripcion + "</option>";
+                $('#casos_area_solicitante').append(content);
+            });
+            inicializaMultiSelect(are_slt);
+
+            // Tab de Casos no Asignados
+            $('#reqs_area_solicitante').html("");
+            $('#reqs_area_solicitante').empty();
+
+            $.each(lstAreaSolicitante, function (index, item) {
+                content = "<option value='" + item.ar_id_area + "'>" + item.ar_descripcion + "</option>";
+                $('#reqs_area_solicitante').append(content);
+            });
+            inicializaMultiSelect("reqs_area_solicitante");
+
+            // Coordinaciones
+            $('#reqs_coord_solicitante').html("");
+            $('#reqs_coord_solicitante').empty();
+
+            $.each(lstCoordinacion, function (index, item) {
+                content = "<option value='" + item.acl_id + "'>" + item.acl_nombre + "</option>";
+                $('#reqs_coord_solicitante').append(content);
+            });
+            inicializaMultiSelect("reqs_coord_solicitante");
+
+            /*---------------------Configuracion de Areas de Tareas-------------------------------------*/
+            //Cargar lista de estados de casos
+            var lstEstados = @Html.Raw(Json.Encode(@ViewBag.mLstEstado));
+
+            $('#tareas_estado').html("");
+            $('#tareas_estado').empty();
+
+            $.each(lstEstados, function (index, item) {
+                            content = "<option value='" + item.es_id_estado + "'>" + item.es_descripcion + "</option>";
+                $('#tareas_estado').append(content);
+                        });
+
+            $('#tareas_estado').multiselect({
+                        includeSelectAllOption: true,
+                enableFiltering: true,
+                buttonText: function (options) {
+                                if (options.length === 0) {
+                                    return 'Seleccione Estado';
+                                }
+                                else if (options.length > 0) {
+                                    return options.length + ' seleccionado(s)';
+                                }
+                            }
+                        });
+
+                        // Cargar combobox de Area
+                        if (EsUsuarioArea) {
+                $('#casos_estado_area').html("");
+                $('#casos_estado_area').empty();
+
+                $.each(lstEstados, function (index, item) {
+
+                                if (item.es_id_estado == 1 || item.es_id_estado == 2) {
+                                    content = "<option value='" + item.es_id_estado + "' selected='true'>" + item.es_descripcion + "</option>";
+                                }
+                                else {
+                                    content = "<option value='" + item.es_id_estado + "'>" + item.es_descripcion + "</option>";
+                                }
+                    //content = "<option value='" + item.es_id_estado + "'>" + item.es_descripcion + "</option>";
+                    $('#casos_estado_area').append(content);
+                            });
+
+                    $('#casos_estado_area').multiselect({
+                            includeSelectAllOption: true,
+                        enableFiltering: true,
+                        buttonText: function (options) {
+                                    if (options.length === 0) {
+                                        return 'Seleccione Estado';
+                                    }
+                                    else if (options.length > 0) {
+                                        return options.length + ' seleccionado(s)';
+                                    }
+                                }
+                            });
+
+                //Cargar combo box de area
+                $('#filtro_casos_area').html("");
+                $('#filtro_casos_area').empty();
+
+                $.each(lstAreas, function (index, item) {
+                                content = "<option value='" + item.ar_id_area + "'>" + item.ar_descripcion + "</option>";
+                    $('#filtro_casos_area').append(content);
+                            });
+                $('#filtro_casos_area').multiselect({
+                            includeSelectAllOption: true,
+                    enableFiltering: true,
+                    buttonText: function (options) {
+                                    if (options.length === 0) {
+                                        return 'Seleccione Area';
+                                    }
+                                    else if (options.length > 0) {
+                                        return options.length + ' seleccionado(s)';
+                                    }
+                                }
+                            });
+
+                        }
+
+                        if (!EsCoordinador) {
+                $("#form_tabs_usuario").hide();
+            }
+
+            if (!EsJefe) {
+                $("#casos_area").prop('disabled', 'disabled');
+
+                $("#casos_area").attr('disabled', true);
+
+            }
+
+                        if (!EsUsuarioArea) {
+                $("#btntabTareas").show();
+                $("#btnTabCasos").show();
+
+
+                            if (casoDefault == -1) {
+                    $("#inicializarDatos").click();
+                    $("#opTabCasos").click();
+                            } else {
+                    $("#inicializarDatos").click();
+                    $("#alertaInfo").attr("data-id-caso", casoDefault); // Agregar el Id del caso
+                    $("#alertaInfo").attr("data-id-estado-caso", casoEstado); // Agregar el estado del caso
+
+                    $("#header_fecha_inicio").text("");
+                    $("#header_fecha_compromiso").text("");
+
+                    $("#header_caso").text(vca_itop + ' - ' + vca_titulo );
+                    $("#header_analista").text(vnombreAnalista);
+
+                    $("#header_estado").text(vca_desc_estado);
+
+                    if (vca_fecha_inicio != null) { $("#header_fecha_inicio").text(moment(vca_fecha_inicio).format('DD/MM/YYYY HH:mm')); }
+                    if (vca_fecha_compromiso != null) { $("#header_fecha_compromiso").text(moment(vca_fecha_compromiso).format('DD/MM/YYYY HH:mm')); }
+
+                    //$("#header_fecha_compromiso").text(moment(row["ac_fecha_fin_estimada"]).format('DD/MM/YYYY HH:mm'));
+                    $("#header_avance").text(String(Math.round(vca_avance)) + '%');
+
+                    //loadDataTareas(casoDefault);
+                    //alert(casoDefault);
+                    $("#tareas_estado").change();
+                   $("#opTabTareas").click();
+                                //$("#opTabCasos").click();
+                                //$("#opTabTareas").click();
+                            }
+                        }
+                        else {
+               // $("#btntabTareas").css("visibility", "hidden");
+                $("#btntabTareas").hide();
+                $("#btnTabCasos").hide();
+
+                            //$("#inicializarDatosArea").click();
+                            //$("#opTabAreas").click();
+            }
+
+
+            //NC
+            //AGREGAMOS EVENTO DE SELECCION DE FILTRO DE AREA ASIGNADA
+            $("#casos_area").on("change", function () {
+                var areas = $("#casos_area").val();
+                filtra_usuarios(areas);
+            });
+
+            //FUNCION PARA REALIZAR EL FILTRADO DE USUARIOS EN BASE A ID_AREA
+            function filtra_usuarios(lstAreas) {
+                //LIMPIAMOS Y DESTRUIMOS SELECT
+                $(`#${usr_slt}`).multiselect('destroy');
+                $(`#${usr_slt}`).empty();
+                if (lstAreas && lstAreas.length > 0) {
+                    lstAreas = lstAreas.map(Number);
+                    $.each(lstAnalista, function (index, item) {
+                        if (lstAreas.includes(item.us_id_area)) {
+                            content = "<option value='" + item.us_id_usuario + "' selected='true'>" + item.us_nombre + "</option>";
+                            $(`#${usr_slt}`).append(content);
+                        }
+                    });
+                    inicializaMultiSelect(usr_slt);
+                } else {
+                    //LLENAMOS POR DEFECTO TODOS LOS ANALISTAS DE NUEVO
+                    $.each(lstAnalista, function (index, item) {
+                        content = "<option value='" + item.us_id_usuario + "' selected='true'>" + item.us_nombre + "</option>";
+                        $(`#${usr_slt}`).append(content);
+                    });
+                    inicializaMultiSelect(usr_slt);
+                }
+
+            }
+
+            //FUNCION PARA INICIALIZARMULTISELECT EN UNA CONFIGURACIÓN ESTÁNDAR
+            function inicializaMultiSelect(p_select) {
+                //REINICIALIZAMOS MULTISELECT
+                $(`#${p_select}`).multiselect({
+                    includeSelectAllOption: true,
+                    maxHeight: 250,
+                    enableFiltering: true,
+                    buttonText: function (options) {
+                        if (options.length === 0) {
+                            return 'Seleccione opciones';
+                        }
+                        else if (options.length > 0) {
+                            return options.length + ' seleccionado(s)';
+                        }
+                    }
+                });
+            }
+            //NC
+
+        });
+
+
+    </script>
+}
+
+@*SCRIPT PARA CONTROL Y MANEJO DE DATERANGEPICKER*@
+<!--<script>
+    var fec_ini = "fec_ini";
+    var fec_com = "fec_com";
+    var fec_fin = "fec_fin";
+    $(function () {
+        function inicializaTimePicker(dtrpick) {
+            $(`#${dtrpick}`).daterangepicker({
+                opens: 'right',
+                startDate: moment(),
+                endDate: moment().add('1', 'month'),
+                locale: {
+                    format: 'DD/MM/YYYY',
+                    separator: '-',
+                    applyLabel: 'Buscar',
+                    cancelLabel: 'Limpiar',
+                    toLabel: 'Hasta',
+                    weekLabel: 'Sem',
+                    languaje: 'es'
+                },
+                minDate: moment('2024-12-01'),
+                maxDate: moment().add(2, 'years'),
+                drops: 'down',
+                showDropdowns: true
+            });
+        }
+
+        inicializaTimePicker(fec_ini);
+        inicializaTimePicker(fec_fin);
+        inicializaTimePicker(fec_com);
+    });
+
+    $('#check_fechas').change(function () {
+        if ($(this).is(':checked')) {
+            $(`#${fec_ini}`).val('');
+            $(`#${fec_fin}`).val('');
+            $(`#${fec_com}`).val('');
+            $('#divFechasFin').show();
+            $('#divFechasInicio').show();
+            $('#divFechasCompromiso').show();
+        } else {
+            $('#divFechasFin').hide();
+            $('#divFechasInicio').hide();
+            $('#divFechasCompromiso').hide();
+        }
+    });
+</script>-->
+@*MANEJO DE EVENTOS DE FILTROS AVANZADOS *@
+<!--<script>
+    $('#fec_ini').on('cancel.daterangepicker', function (ev, picker) {
+        $('#fec_ini').val('');
+    });
+    $('#fec_com').on('cancel.daterangepicker', function (ev, picker) {
+        $('#fec_com').val('');
+    });
+    $('#fec_fin').on('cancel.daterangepicker', function (ev, picker) {
+        $('#fec_fin').val('');
+    });
+</script>-->
