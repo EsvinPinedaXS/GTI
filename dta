@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataTable con estilos</title>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 0.70rem;
+    background: #f9f9f9;
+    color: #333;
+    padding: 20px;
+  }
+
+  .datatable-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #D4DDF7;
+    border-radius: 4px;
+  }
+
+  .left-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .right-controls {
+    display: flex;
+    align-items: center;
+  }
+
+  .select-registros {
+    font-size: 0.75rem;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+
+  .boton-pdf {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    background: #F5F5F7;
+    color: #5B7DB1;
+    border: 1px solid #5B7DB1;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .buscador {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 200px;
+  }
+
+  table.dataTable thead th {
+    background: #EBEEF2;
+    text-align: left;
+  }
+
+  table.dataTable {
+    font-size: 0.7rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="datatable-header">
+  <div class="left-controls">
+    <label for="registros">Registros:</label>
+    <select id="registros" class="select-registros">
+      <option>10</option>
+      <option>25</option>
+      <option>50</option>
+    </select>
+
+    <button id="btn-pdf" class="boton-pdf">Exportar PDF</button>
+  </div>
+
+  <div class="right-controls">
+    <input type="text" id="custom-search" class="buscador" placeholder="Buscar…">
+  </div>
+</div>
+
+<table id="miTabla" class="display" style="width:100%">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nombre</th>
+      <th>Estado</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>Juan Pérez</td>
+      <td>Activo</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>María López</td>
+      <td>Inactivo</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Carlos Ruiz</td>
+      <td>Activo</td>
+    </tr>
+  </tbody>
+</table>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script>
+$(document).ready(function () {
+  const tabla = $('#miTabla').DataTable({
+    paging: true,
+    pageLength: 10,
+    lengthChange: false,
+    searching: true,
+    info: false,
+    dom: 't', // ocultamos los controles propios
+    language: {
+      search: "",
+      searchPlaceholder: "Buscar…"
+    }
+  });
+
+  // Personaliza el buscador
+  $('#custom-search').on('keyup', function () {
+    tabla.search(this.value).draw();
+  });
+
+  // Personaliza selector de registros
+  $('#registros').on('change', function () {
+    tabla.page.len($(this).val()).draw();
+  });
+
+  // Botón PDF simulado
+  $('#btn-pdf').on('click', function () {
+    alert("Exportar a PDF (aquí puedes integrar tu lógica)");
+  });
+});
+</script>
+
+</body>
+</html>
