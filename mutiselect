@@ -1,0 +1,38 @@
+function inicializarMultiselectConFiltroNormalizado(selector) {
+    $(selector).multiselect({
+        includeSelectAllOption: true,
+        enableFiltering: true,
+        enableCaseInsensitiveFiltering: true,
+        filterPlaceholder: 'Buscar…'
+    });
+
+    // Enganchar al input de búsqueda
+    const $input = $('.multiselect-container .multiselect-search input');
+
+    $input.on('input', function () {
+        const filtroUsuario = $(this).val();
+
+        const filtroNormalizado = normalizarTexto(filtroUsuario.trim());
+
+        $('.multiselect-container li').each(function () {
+            const $li = $(this);
+            const textoOpcion = normalizarTexto($li.text().trim());
+
+            if (filtroNormalizado === '' || textoOpcion.includes(filtroNormalizado)) {
+                $li.show();
+            } else {
+                $li.hide();
+            }
+        });
+    });
+
+    function normalizarTexto(str) {
+        return str
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, '');
+    }
+}
+
+// Llamar a la función
+inicializarMultiselectConFiltroNormalizado('#miSelect');
