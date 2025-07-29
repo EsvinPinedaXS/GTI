@@ -1,0 +1,92 @@
+public ActionResult ObtenerDatos(int id)
+{
+    System.Threading.Thread.Sleep(3000); // simula procesamiento lento
+    return Json(new { ok = true, mensaje = "Datos recibidos correctamente." }, JsonRequestBehavior.AllowGet);
+}
+
+
+--->
+
+<button id="btn-cargar">Cargar Datos</button>
+
+<div id="resultado"></div>
+
+<!-- Loader -->
+<div id="loader-overlay" style="display: none;">
+    <div class="loader-container">
+        <div class="loader"></div>
+        <div class="loader-message">Cargando, por favor espere...</div>
+    </div>
+</div>
+
+--->
+
+#loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.6);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loader-container {
+    text-align: center;
+}
+
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 10px auto;
+    animation: spin 1s linear infinite;
+}
+
+.loader-message {
+    font-size: 1rem;
+    color: #333;
+    font-family: Arial, sans-serif;
+}
+
+@keyframes spin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+--->
+
+$(document).ready(function () {
+    $('#btn-cargar').on('click', function () {
+        $.ajax({
+            url: '/TuControlador/ObtenerDatos', // ajusta la ruta
+            type: 'GET',
+            data: { id: 123 },
+            beforeSend: function () {
+                $('#loader-overlay').show();
+            },
+            success: function (response) {
+                if (response.ok) {
+                    $('#resultado').html('<strong>' + response.mensaje + '</strong>');
+                } else {
+                    $('#resultado').html('<span style="color:red;">Error en la respuesta.</span>');
+                }
+            },
+            error: function () {
+                $('#resultado').html('<span style="color:red;">Error en la solicitud.</span>');
+            },
+            complete: function () {
+                $('#loader-overlay').hide();
+            }
+        });
+    });
+});
+
+
+-->
+
