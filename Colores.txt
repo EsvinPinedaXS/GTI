@@ -1,0 +1,104 @@
+| Color           | Fondo     | Texto     | Notas                         |
+| --------------- | --------- | --------- | ----------------------------- |
+| **Verde**       | `#5E9E7C` | `#FFFFFF` | éxito, confirmación           |
+| **Rojo**        | `#C86C6C` | `#FFFFFF` | error, advertencia crítica    |
+| **Gris**        | `#CCCCCC` | `#333333` | neutro, deshabilitado         |
+| **Amarillo**    | `#E0B254` | `#333333` | advertencia no crítica        |
+| **Azul**        | `#5B7DB1` | `#FFFFFF` | acción principal, info        |
+| **Gris oscuro** | `#444444` | `#FFFFFF` | para contrastes fuertes       |
+| **Blanco**      | `#FFFFFF` | `#333333` | fondo general                 |
+| **Anaranjado**  | `#D98C4C` | `#FFFFFF` | alternativa para advertencias |
+
+
+| Concepto    | Fondo     | Texto     |
+| ----------- | --------- | --------- |
+| Verde       | `#5E9E7C` | `#FFFFFF` |
+| Rojo        | `#C86C6C` | `#FFFFFF` |
+| Gris        | `#CCCCCC` | `#333333` |
+| Amarillo    | `#E0B254` | `#333333` |
+| Azul        | `#5B7DB1` | `#FFFFFF` |
+| Gris oscuro | `#444444` | `#FFFFFF` |
+| Blanco      | `#FFFFFF` | `#333333` |
+| Anaranjado  | `#D98C4C` | `#FFFFFF` |
+
+
+Azul 
+| Variante   | Hex       | Notas                                                  |
+| ---------- | --------- | ------------------------------------------------------ |
+| Más claro  | `#8EA7CC` | Azul lavanda más suave, pastel, elegante               |
+| Más oscuro | `#3F5C8C` | Azul marino sobrio, ideal para hover o estados activos |
+
+
+| Variante   | Hex       | Notas                                     |
+| ---------- | --------- | ----------------------------------------- |
+| Más claro  | `#F1D393` | Amarillo dorado pastel, ideal para fondos |
+| Más oscuro | `#B8902E` | Amarillo mostaza oscuro, para enfatizar   |
+
+| Variante   | Hex       | Notas                                     |
+| ---------- | --------- | ----------------------------------------- |
+| Más claro  | `#F1D393` | Amarillo dorado pastel, ideal para fondos |
+| Más oscuro | `#B8902E` | Amarillo mostaza oscuro, para enfatizar   |
+
+
+
+| Variante   | Hex       | Notas                                                                |
+| ---------- | --------- | -------------------------------------------------------------------- |
+| Más claro  | `#EBB78F` | Anaranjado melón pastel, elegante para fondos                        |
+| Más oscuro | `#A86428` | Anaranjado quemado, muy sobrio, ideal para hover o acciones críticas |
+
+| Color base | Más claro | Original  | Más oscuro |
+| ---------- | --------- | --------- | ---------- |
+| Azul       | `#8EA7CC` | `#5B7DB1` | `#3F5C8C`  |
+| Amarillo   | `#F1D393` | `#E0B254` | `#B8902E`  |
+| Anaranjado | `#EBB78F` | `#D98C4C` | `#A86428`  |
+
+-----------------------
+Con texto 
+| Color base     | Más claro | Original  | Más oscuro |
+| -------------- | --------- | --------- | ---------- |
+| **Rojo**       | `#E09999` | `#C86C6C` | `#A14F4F`  |
+| **Verde**      | `#8DBDA2` | `#5E9E7C` | `#436F5B`  |
+| **Azul**       | `#8EA7CC` | `#5B7DB1` | `#3F5C8C`  |
+| **Amarillo**   | `#F1D393` | `#E0B254` | `#B8902E`  |
+| **Anaranjado** | `#EBB78F` | `#D98C4C` | `#A86428`  |
+
+
+
+| Fondo                   | Texto sugerido                                            |
+| ----------------------- | --------------------------------------------------------- |
+| Rojo claro `#E09999`    | **`#333333`** (gris oscuro, porque el fondo es muy claro) |
+| Rojo original `#C86C6C` | **`#FFFFFF`**                                             |
+| Rojo oscuro `#A14F4F`   | **`#FFFFFF`**                                             |
+
+
+
+| Fondo                    | Texto sugerido |
+| ------------------------ | -------------- |
+| Verde claro `#8DBDA2`    | **`#333333`**  |
+| Verde original `#5E9E7C` | **`#FFFFFF`**  |
+| Verde oscuro `#436F5B`   | **`#FFFFFF`**  |
+
+
+
+| Fondo                   | Texto sugerido |
+| ----------------------- | -------------- |
+| Azul claro `#8EA7CC`    | **`#333333`**  |
+| Azul original `#5B7DB1` | **`#FFFFFF`**  |
+| Azul oscuro `#3F5C8C`   | **`#FFFFFF`**  |
+
+
+| Fondo                       | Texto sugerido |
+| --------------------------- | -------------- |
+| Amarillo claro `#F1D393`    | **`#333333`**  |
+| Amarillo original `#E0B254` | **`#333333`**  |
+| Amarillo oscuro `#B8902E`   | **`#FFFFFF`**  |
+
+
+| Fondo                         | Texto sugerido |
+| ----------------------------- | -------------- |
+| Anaranjado claro `#EBB78F`    | **`#333333`**  |
+| Anaranjado original `#D98C4C` | **`#FFFFFF`**  |
+| Anaranjado oscuro `#A86428`   | **`#FFFFFF`**  |
+
+
+
