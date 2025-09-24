@@ -1,0 +1,131 @@
+1. Clase resultado
+
+public class ResultadoAccion
+{
+    public bool Success { get; set; }
+    public string Mensaje { get; set; }
+
+    public ResultadoAccion(bool success, string mensaje = "")
+    {
+        Success = success;
+        Mensaje = mensaje;
+    }
+}
+
+2. Clase eventosBotones (devuelve ResultadoAccion)
+
+public class eventosBotones
+{
+    public ResultadoAccion Accion01()
+    {
+        try
+        {
+            // Simulación de lógica
+            Console.WriteLine("Ejecutando Acción 01...");
+            // throw new Exception("Error en Acción 01"); // Descomentar para probar error
+
+            return new ResultadoAccion(true, "Acción 01 ejecutada correctamente");
+        }
+        catch (Exception ex)
+        {
+            return new ResultadoAccion(false, $"Error en Acción 01: {ex.Message}");
+        }
+    }
+
+    public ResultadoAccion Accion02()
+    {
+        try
+        {
+            Console.WriteLine("Ejecutando Acción 02...");
+            return new ResultadoAccion(true, "Acción 02 ejecutada correctamente");
+        }
+        catch (Exception ex)
+        {
+            return new ResultadoAccion(false, $"Error en Acción 02: {ex.Message}");
+        }
+    }
+
+    public ResultadoAccion Accion03()
+    {
+        try
+        {
+            Console.WriteLine("Ejecutando Acción 03...");
+            return new ResultadoAccion(true, "Acción 03 ejecutada correctamente");
+        }
+        catch (Exception ex)
+        {
+            return new ResultadoAccion(false, $"Error en Acción 03: {ex.Message}");
+        }
+    }
+}
+
+GestorAcciones validando errores
+
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+
+public class GestorAcciones
+{
+    private readonly eventosBotones _eventos;
+
+    public GestorAcciones()
+    {
+        _eventos = new eventosBotones();
+    }
+
+    private readonly Dictionary<string, List<string>> dependencias = new Dictionary<string, List<string>>
+    {
+        { "Accion03", new List<string>{ "Accion01" } },
+        { "Accion02", new List<string>{ "Accion01" } }
+    };
+
+    public ResultadoAccion Ejecutar(string accion)
+    {
+        // Ejecutar dependencias primero
+        if (dependencias.ContainsKey(accion))
+        {
+            foreach (var dep in dependencias[accion])
+            {
+                var resultadoDep = Ejecutar(dep);
+                if (!resultadoDep.Success)
+                {
+                    // Si falla una dependencia, no continuar
+                    return new ResultadoAccion(false, $"No se ejecutó {accion} porque falló {dep}: {resultadoDep.Mensaje}");
+                }
+            }
+        }
+
+        // Ejecutar la acción real
+        MethodInfo metodo = _eventos.GetType().GetMethod(accion);
+        if (metodo != null)
+        {
+            return (ResultadoAccion)metodo.Invoke(_eventos, null);
+        }
+
+        return new ResultadoAccion(false, $"La acción {accion} no existe");
+    }
+}
+
+
+4. Controlador 
+
+public class BotonesController : Controller
+{
+    private readonly GestorAcciones _gestor;
+
+    public BotonesController()
+    {
+        _gestor = new GestorAcciones();
+    }
+
+    public ActionResult AccionBoton03()
+    {
+        var resultado = _gestor.Ejecutar("Accion03");
+
+        if (resultado.Success)
+            return Content(resultado.Mensaje);
+        else
+            return Content("Error: " + resultado.Mensaje);
+    }
+}
