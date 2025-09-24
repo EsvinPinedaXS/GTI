@@ -1,0 +1,167 @@
+1.
+
+public class ResultadoAccion
+{
+    public bool Success { get; set; }
+    public string Mensaje { get; set; }
+
+    public ResultadoAccion(bool success, string mensaje = "")
+    {
+        Success = success;
+        Mensaje = mensaje;
+    }
+}
+
+2.Interfaz común
+public interface IAccion
+{
+    ResultadoAccion Ejecutar();
+}
+
+
+3. Acciones individuales
+using System;
+
+public class Accion01 : IAccion
+{
+    public ResultadoAccion Ejecutar()
+    {
+        try
+        {
+            Console.WriteLine("Ejecutando Acción 01...");
+            return new ResultadoAccion(true, "Acción 01 completada");
+        }
+        catch (Exception ex)
+        {
+            return new ResultadoAccion(false, $"Error en Acción 01: {ex.Message}");
+        }
+    }
+}
+
+public class Accion02 : IAccion
+{
+    public ResultadoAccion Ejecutar()
+    {
+        try
+        {
+            Console.WriteLine("Ejecutando Acción 02...");
+            return new ResultadoAccion(true, "Acción 02 completada");
+        }
+        catch (Exception ex)
+        {
+            return new ResultadoAccion(false, $"Error en Acción 02: {ex.Message}");
+        }
+    }
+}
+
+public class Accion03 : IAccion
+{
+    public ResultadoAccion Ejecutar()
+    {
+        try
+        {
+            Console.WriteLine("Ejecutando Acción 03...");
+            return new ResultadoAccion(true, "Acción 03 completada");
+        }
+        catch (Exception ex)
+        {
+            return new ResultadoAccion(false, $"Error en Acción 03: {ex.Message}");
+        }
+    }
+}
+
+public class Accion04 : IAccion
+{
+    public ResultadoAccion Ejecutar()
+    {
+        try
+        {
+            Console.WriteLine("Ejecutando Acción 04...");
+            return new ResultadoAccion(true, "Acción 04 completada");
+        }
+        catch (Exception ex)
+        {
+            return new ResultadoAccion(false, $"Error en Acción 04: {ex.Message}");
+        }
+    }
+}
+
+
+4. Gestor de acciones con dependencias
+using System.Collections.Generic;
+
+public class GestorAcciones
+{
+    private readonly Dictionary<string, IAccion> acciones = new Dictionary<string, IAccion>
+    {
+        { "Accion01", new Accion01() },
+        { "Accion02", new Accion02() },
+        { "Accion03", new Accion03() },
+        { "Accion04", new Accion04() }
+    };
+
+    private readonly Dictionary<string, List<string>> dependencias = new Dictionary<string, List<string>>
+    {
+        { "Accion03", new List<string>{ "Accion01" } },              // 03 depende de 01
+        { "Accion04", new List<string>{ "Accion01", "Accion02" } }   // 04 depende de 01 y 02
+    };
+
+    public ResultadoAccion Ejecutar(string accion)
+    {
+        // Ejecutar dependencias si las hay
+        if (dependencias.ContainsKey(accion))
+        {
+            foreach (var dep in dependencias[accion])
+            {
+                var resultadoDep = Ejecutar(dep);
+                if (!resultadoDep.Success)
+                {
+                    return new ResultadoAccion(false, $"Falló {dep}, por lo tanto no se ejecutó {accion}. Detalle: {resultadoDep.Mensaje}");
+                }
+            }
+        }
+
+        // Ejecutar la acción real
+        if (acciones.ContainsKey(accion))
+        {
+            return acciones[accion].Ejecutar();
+        }
+
+        return new ResultadoAccion(false, $"La acción {accion} no existe");
+    }
+}
+5. Controlador 
+using System.Web.Mvc;
+
+public class BotonesController : Controller
+{
+    private readonly GestorAcciones _gestor = new GestorAcciones();
+
+    public ActionResult AccionBoton01()
+    {
+        var resultado = _gestor.Ejecutar("Accion01");
+        return Content(resultado.Success ? resultado.Mensaje : "Error: " + resultado.Mensaje);
+    }
+
+    public ActionResult AccionBoton02()
+    {
+        var resultado = _gestor.Ejecutar("Accion02");
+        return Content(resultado.Success ? resultado.Mensaje : "Error: " + resultado.Mensaje);
+    }
+
+    public ActionResult AccionBoton03()
+    {
+        var resultado = _gestor.Ejecutar("Accion03");
+        return Content(resultado.Success ? resultado.Mensaje : "Error: " + resultado.Mensaje);
+    }
+
+    public ActionResult AccionBoton04()
+    {
+        var resultado = _gestor.Ejecutar("Accion04");
+        return Content(resultado.Success ? resultado.Mensaje : "Error: " + resultado.Mensaje);
+    }
+}
+
+
+
+
