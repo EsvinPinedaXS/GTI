@@ -1,0 +1,148 @@
+1. Controlador EscenariosController
+
+using System.Collections.Generic;
+using System.Web.Mvc;
+
+namespace SistemaEscenarios.Controllers
+{
+    public class EscenariosController : Controller
+    {
+        private readonly MotorEscenarios _motor = new MotorEscenarios();
+
+        // Página principal
+        public ActionResult Index()
+        {
+            var escenarios = new List<string> { "Guardar Usuario", "Validar Usuario (DLL)" };
+            return View(escenarios);
+        }
+
+        // Ejecutar un escenario individual
+        public ActionResult Ejecutar(string nombre)
+        {
+            var resultado = EjecutarEscenario(nombre);
+
+            ViewBag.Nombre = nombre;
+            ViewBag.Resultado = resultado;
+            return View("Resultado");
+        }
+
+        // Ejecutar todos los escenarios en cadena
+        public ActionResult EjecutarTodos()
+        {
+            var escenarios = new List<string> { "Guardar Usuario", "Validar Usuario (DLL)" };
+            var resultados = new List<PasoResultado>();
+
+            foreach (var escenario in escenarios)
+            {
+                var resultado = EjecutarEscenario(escenario);
+                resultados.Add(resultado);
+
+                // Si quieres detener la cadena en caso de error, descomenta:
+                // if (!resultado.Exito) break;
+            }
+
+            return View("ResultadoTodos", resultados);
+        }
+
+        // Método auxiliar que centraliza la lógica de ejecución
+        private PasoResultado EjecutarEscenario(string nombre)
+        {
+            if (nombre == "Guardar Usuario")
+            {
+                var usuario = new UsuarioDto
+                {
+                    Id = 101,
+                    Nombre = "Juan Pérez",
+                    Email = "juan@test.com"
+                };
+
+                _motor.Contexto.SetVariable("Usuario", usuario);
+                return new PasoResultado { Escenario = nombre, Exito = true, Mensaje = "Usuario guardado en contexto" };
+            }
+            else if (nombre == "Validar Usuario (DLL)")
+            {
+                var usuario = _motor.Contexto.GetVariable<UsuarioDto>("Usuario");
+                var servicio = new ServicioUsuarios();
+                var validacion = servicio.ValidarUsuario(usuario);
+
+                return new PasoResultado { Escenario = nombre, Exito = validacion, Mensaje = $"Validación DLL: {validacion}" };
+            }
+
+            return new PasoResultado { Escenario = nombre, Exito = false, Mensaje = "Escenario no reconocido" };
+        }
+    }
+}
+
+
+-+------
+2. Modelo extendido PasoResultado
+public class PasoResultado
+{
+    public string Escenario { get; set; }
+    public bool Exito { get; set; }
+    public string Mensaje { get; set; }
+}
+
+
+3. Vista Index.cshtml
+@model List<string>
+
+@{
+    ViewBag.Title = "Escenarios";
+}
+
+<h2>Listado de Escenarios</h2>
+
+<ul class="list-group">
+    @foreach (var escenario in Model)
+    {
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            @escenario
+            <a href="@Url.Action("Ejecutar", "Escenarios", new { nombre = escenario })" 
+               class="btn btn-primary btn-sm">
+                Ejecutar
+            </a>
+        </li>
+    }
+</ul>
+
+<div class="mt-3">
+    <a href="@Url.Action("EjecutarTodos", "Escenarios")" class="btn btn-success">
+        Ejecutar Todos los Escenarios
+    </a>
+</div>
+
+
+4. Vista ResultadoTodos.cshtml
+@model List<PasoResultado>
+
+@{
+    ViewBag.Title = "Resultado de Todos los Escenarios";
+}
+
+<h2>Resultados de la Ejecución en Cadena</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Escenario</th>
+            <th>Resultado</th>
+            <th>Mensaje</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model)
+        {
+            <tr class="@(r.Exito ? "table-success" : "table-danger")">
+                <td>@r.Escenario</td>
+                <td>@(r.Exito ? "Éxito" : "Error")</td>
+                <td>@r.Mensaje</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a href="@Url.Action("Index", "Escenarios")" class="btn btn-secondary">Volver</a>
+
+
+5. Flujo Visual

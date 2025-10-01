@@ -1,0 +1,128 @@
+1. Controlador EscenariosController
+
+using System.Collections.Generic;
+using System.Web.Mvc;
+
+namespace SistemaEscenarios.Controllers
+{
+    public class EscenariosController : Controller
+    {
+        private readonly MotorEscenarios _motor = new MotorEscenarios();
+
+        // Página principal
+        public ActionResult Index()
+        {
+            var escenarios = new List<string> { "Guardar Usuario", "Validar Usuario (DLL)" };
+            return View(escenarios);
+        }
+
+        // Ejecutar un escenario
+        public ActionResult Ejecutar(string nombre)
+        {
+            PasoResultado resultado;
+
+            if (nombre == "Guardar Usuario")
+            {
+                // Simulamos paso que guarda un objeto en el contexto
+                var usuario = new UsuarioDto
+                {
+                    Id = 101,
+                    Nombre = "Juan Pérez",
+                    Email = "juan@test.com"
+                };
+
+                _motor.Contexto.SetVariable("Usuario", usuario);
+                resultado = new PasoResultado { Exito = true, Mensaje = "Usuario guardado en contexto" };
+            }
+            else if (nombre == "Validar Usuario (DLL)")
+            {
+                // Ejemplo DLL
+                var usuario = _motor.Contexto.GetVariable<UsuarioDto>("Usuario");
+                var servicio = new ServicioUsuarios();
+                var validacion = servicio.ValidarUsuario(usuario);
+
+                resultado = new PasoResultado { Exito = validacion, Mensaje = $"Validación DLL: {validacion}" };
+            }
+            else
+            {
+                resultado = new PasoResultado { Exito = false, Mensaje = "Escenario no reconocido" };
+            }
+
+            ViewBag.Nombre = nombre;
+            ViewBag.Resultado = resultado;
+            return View("Resultado");
+        }
+    }
+}
+
+
+-----
+
+2. Modelo de apoyo
+
+public class UsuarioDto
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; }
+    public string Email { get; set; }
+}
+
+public class ServicioUsuarios
+{
+    // Simula lógica de negocio
+    public bool ValidarUsuario(UsuarioDto usuario)
+    {
+        return !string.IsNullOrEmpty(usuario.Email) && usuario.Email.Contains("@");
+    }
+}
+
+public class PasoResultado
+{
+    public bool Exito { get; set; }
+    public string Mensaje { get; set; }
+}
+
+
+-----
+3. Vista Index.cshtml
+@model List<string>
+
+@{
+    ViewBag.Title = "Escenarios";
+}
+
+<h2>Listado de Escenarios</h2>
+
+<ul class="list-group">
+    @foreach (var escenario in Model)
+    {
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            @escenario
+            <a href="@Url.Action("Ejecutar", "Escenarios", new { nombre = escenario })" 
+               class="btn btn-primary btn-sm">
+                Ejecutar
+            </a>
+        </li>
+    }
+</ul>
+
+
+-----
+4. 4. Vista Resultado.cshtml
+
+@{
+    ViewBag.Title = "Resultado Escenario";
+    var resultado = ViewBag.Resultado as PasoResultado;
+}
+
+<h2>Resultado: @ViewBag.Nombre</h2>
+
+<div class="alert @(resultado.Exito ? "alert-success" : "alert-danger")">
+    <strong>@(resultado.Exito ? "Éxito" : "Error"):</strong> @resultado.Mensaje
+</div>
+
+<a href="@Url.Action("Index", "Escenarios")" class="btn btn-secondary">Volver</a>
+
+
+----------------------------------------------------------------------------------------
+

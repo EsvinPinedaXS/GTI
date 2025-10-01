@@ -1,0 +1,148 @@
+CREATE TABLE BitacoraEscenarios
+(
+    BitacoraId INT IDENTITY(1,1) PRIMARY KEY,
+    Usuario NVARCHAR(100) NOT NULL,
+    FechaEjecucion DATETIME NOT NULL DEFAULT GETDATE(),
+    Escenario NVARCHAR(200) NOT NULL,
+    Exito BIT NOT NULL,
+    Mensaje NVARCHAR(MAX) NULL
+);
+
+-- Ejemplo: Insertar un registro
+INSERT INTO BitacoraEscenarios (Usuario, Escenario, Exito, Mensaje)
+VALUES ('admin', 'Guardar Usuario', 1, 'Usuario guardado correctamente');
+
+
+2. Extender el modelo PasoResultado
+
+public class PasoResultado
+{
+    public string Escenario { get; set; }
+    public bool Exito { get; set; }
+    public string Mensaje { get; set; }
+}
+
+
+3. Controlador EscenariosController con log
+
+using System.Collections.Generic;
+using System.Web.Mvc;
+using System.Data.SqlClient;
+using System.Configuration;
+
+namespace SistemaEscenarios.Controllers
+{
+    public class EscenariosController : Controller
+    {
+        private readonly MotorEscenarios _motor = new MotorEscenarios();
+
+        public ActionResult Index()
+        {
+            var escenarios = new List<string> { "Guardar Usuario", "Validar Usuario (DLL)" };
+            return View(escenarios);
+        }
+
+        public ActionResult EjecutarTodos()
+        {
+            var escenarios = new List<string> { "Guardar Usuario", "Validar Usuario (DLL)" };
+            var resultados = new List<PasoResultado>();
+            string usuarioEjecutor = User.Identity.Name ?? "anonimo";
+
+            foreach (var escenario in escenarios)
+            {
+                var resultado = EjecutarEscenario(escenario);
+                resultados.Add(resultado);
+
+                GuardarBitacora(usuarioEjecutor, resultado);
+
+                // Si quieres detener la cadena en caso de error, descomenta:
+                // if (!resultado.Exito) break;
+            }
+
+            return View("ResultadoTodos", resultados);
+        }
+
+        private PasoResultado EjecutarEscenario(string nombre)
+        {
+            if (nombre == "Guardar Usuario")
+            {
+                var usuario = new UsuarioDto
+                {
+                    Id = 101,
+                    Nombre = "Juan Pérez",
+                    Email = "juan@test.com"
+                };
+
+                _motor.Contexto.SetVariable("Usuario", usuario);
+                return new PasoResultado { Escenario = nombre, Exito = true, Mensaje = "Usuario guardado en contexto" };
+            }
+            else if (nombre == "Validar Usuario (DLL)")
+            {
+                var usuario = _motor.Contexto.GetVariable<UsuarioDto>("Usuario");
+                var servicio = new ServicioUsuarios();
+                var validacion = servicio.ValidarUsuario(usuario);
+
+                return new PasoResultado { Escenario = nombre, Exito = validacion, Mensaje = $"Validación DLL: {validacion}" };
+            }
+
+            return new PasoResultado { Escenario = nombre, Exito = false, Mensaje = "Escenario no reconocido" };
+        }
+
+        private void GuardarBitacora(string usuario, PasoResultado resultado)
+        {
+            var connectionString = ConfigurationManager.ConnectionStrings["TuConexion"].ConnectionString;
+
+            using (var conn = new SqlConnection(connectionString))
+            {
+                conn.Open();
+                var cmd = new SqlCommand(
+                    "INSERT INTO BitacoraEscenarios (Usuario, FechaEjecucion, Escenario, Exito, Mensaje) " +
+                    "VALUES (@Usuario, GETDATE(), @Escenario, @Exito, @Mensaje)", conn);
+
+                cmd.Parameters.AddWithValue("@Usuario", usuario);
+                cmd.Parameters.AddWithValue("@Escenario", resultado.Escenario);
+                cmd.Parameters.AddWithValue("@Exito", resultado.Exito);
+                cmd.Parameters.AddWithValue("@Mensaje", resultado.Mensaje);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+    }
+}
+
+
+4. Vista ResultadoTodos.cshtml (con log)
+
+ @model List<PasoResultado>
+
+@{
+    ViewBag.Title = "Resultado de Todos los Escenarios";
+}
+
+<h2>Resultados de la Ejecución en Cadena</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Escenario</th>
+            <th>Resultado</th>
+            <th>Mensaje</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model)
+        {
+            <tr class="@(r.Exito ? "table-success" : "table-danger")">
+                <td>@r.Escenario</td>
+                <td>@(r.Exito ? "Éxito" : "Error")</td>
+                <td>@r.Mensaje</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="alert alert-info mt-3">
+    Todos los resultados han sido guardados en la bitácora.
+</div>
+
+<a href="@Url.Action("Index", "Escenarios")" class="btn btn-secondary">Volver</a>
