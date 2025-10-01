@@ -1,0 +1,305 @@
+1. Contexto extendido con soporte de objetos
+
+public class EscenarioContexto
+{
+    public Dictionary<string, object> Variables { get; private set; } = new();
+
+    public void SetVariable(string key, object value) => Variables[key] = value;
+
+    public T GetVariable<T>(string key)
+    {
+        if (Variables.TryGetValue(key, out var value))
+            return (T)value;
+
+        throw new Exception($"Variable '{key}' no encontrada.");
+    }
+
+    // Reemplazar placeholders simples o de propiedades
+    public string ReemplazarVariables(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+
+        foreach (var variable in Variables)
+        {
+            if (variable.Value is not null)
+            {
+                var type = variable.Value.GetType();
+
+                // 1. Reemplazo directo de la variable completa
+                input = input.Replace("{{" + variable.Key + "}}", variable.Value.ToString());
+
+                // 2. Reemplazo de propiedades: {{Variable.Propiedad}}
+                foreach (var prop in type.GetProperties())
+                {
+                    var placeholder = $"{{{{{variable.Key}.{prop.Name}}}}}";
+                    var propValue = prop.GetValue(variable.Value)?.ToString();
+                    if (propValue != null)
+                        input = input.Replace(placeholder, propValue);
+                }
+            }
+        }
+
+        return input;
+    }
+}
+
+
+------
+2. Ejemplo de clase a usar como variable
+
+public class UsuarioDto
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; }
+    public string Email { get; set; }
+}
+
+-----
+3. Guardar un objeto en el contexto
+
+{
+  "id": 101,
+  "nombre": "Juan Pérez",
+  "email": "juan@test.com"
+}
+
+var usuario = new UsuarioDto
+{
+    Id = 101,
+    Nombre = "Juan Pérez",
+    Email = "juan@test.com"
+};
+
+_contexto.SetVariable("Usuario", usuario);
+
+
+------
+4. Uso en parámetros posteriores
+
+{
+  "url": "https://api.local/usuarios/{{Usuario.Id}}/correo",
+  "method": "POST",
+  "body": {
+    "email": "{{Usuario.Email}}",
+    "nombre": "{{Usuario.Nombre}}"
+  }
+}
+
+{
+  "url": "https://api.local/usuarios/101/correo",
+  "method": "POST",
+  "body": {
+    "email": "juan@test.com",
+    "nombre": "Juan Pérez"
+  }
+}
+
+
+------
+5. Uso directo en DLLs
+
+case "DLL":
+    var usuario = _contexto.GetVariable<UsuarioDto>("Usuario");
+    var servicio = new ServicioUsuarios();
+    var resultado = servicio.ValidarUsuario(usuario);
+    return new PasoResultado { Exito = resultado, Mensaje = "DLL ejecutada con objeto" };
+
+
+--------------------------------------------------------------------------------------
+1. SQL (escenarios y pasos)
+
+-- Escenario 1: Crear Usuario
+INSERT INTO Escenarios (EscenarioId, Nombre, Descripcion, Activo) VALUES
+(1, 'Crear Usuario', 'Crea un usuario en el API y guarda el objeto', 1);
+
+INSERT INTO PasosEscenario (PasoId, EscenarioId, Orden, TipoPaso, Parametros) VALUES
+(1, 1, 1, 'HTTP',
+ '{
+    "url": "https://api.local/usuarios/crear",
+    "method": "POST",
+    "body": { "nombre": "Juan Pérez", "email": "juan@test.com" },
+    "mapToObject": "Usuario"
+ }');
+
+-- Escenario 2: Validar Usuario
+INSERT INTO Escenarios (EscenarioId, Nombre, Descripcion, Activo) VALUES
+(2, 'Validar Usuario', 'Valida el usuario creado previamente', 1);
+
+INSERT INTO PasosEscenario (PasoId, EscenarioId, Orden, TipoPaso, Parametros) VALUES
+(2, 2, 1, 'HTTP',
+ '{
+    "url": "https://api.local/usuarios/{{Usuario.Id}}",
+    "method": "GET"
+ }');
+
+INSERT INTO PasosEscenario (PasoId, EscenarioId, Orden, TipoPaso, Parametros) VALUES
+(3, 2, 2, 'DLL',
+ '{
+    "method": "ValidarUsuario",
+    "argument": "{{Usuario}}"
+ }');
+
+
+----
+
+2. Modelo de objeto
+public class UsuarioDto
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; }
+    public string Email { get; set; }
+}
+
+
+------
+
+3. Contexto extendido (ya soporta objetos)
+
+public class EscenarioContexto
+{
+    public Dictionary<string, object> Variables { get; private set; } = new();
+
+    public void SetVariable(string key, object value) => Variables[key] = value;
+
+    public T GetVariable<T>(string key)
+    {
+        if (Variables.TryGetValue(key, out var value))
+            return (T)value;
+
+        throw new Exception($"Variable '{key}' no encontrada.");
+    }
+
+    public string ReemplazarVariables(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+
+        foreach (var variable in Variables)
+        {
+            if (variable.Value is not null)
+            {
+                var type = variable.Value.GetType();
+
+                // Reemplazo directo {{Variable}}
+                input = input.Replace("{{" + variable.Key + "}}", variable.Value.ToString());
+
+                // Reemplazo de propiedades {{Variable.Propiedad}}
+                foreach (var prop in type.GetProperties())
+                {
+                    var placeholder = $"{{{{{variable.Key}.{prop.Name}}}}}";
+                    var propValue = prop.GetValue(variable.Value)?.ToString();
+                    if (propValue != null)
+                        input = input.Replace(placeholder, propValue);
+                }
+            }
+        }
+
+        return input;
+    }
+}
+
+
+-----
+
+4. Servicio DLL simulado
+public class ServicioUsuarios
+{
+    public bool ValidarUsuario(UsuarioDto usuario)
+    {
+        // Aquí podría validar contra reglas de negocio o BD
+        return !string.IsNullOrEmpty(usuario.Email) && usuario.Email.Contains("@");
+    }
+}
+
+
+------
+
+Motor de escenarios con soporte mapToObject y DLL
+
+using Newtonsoft.Json.Linq;
+using System.Net.Http;
+using System.Text;
+
+public class MotorEscenarios
+{
+    private readonly EscenarioContexto _contexto;
+
+    public MotorEscenarios(EscenarioContexto contexto)
+    {
+        _contexto = contexto;
+    }
+
+    public async Task<PasoResultado> EjecutarPasoAsync(PasoEscenario paso)
+    {
+        string parametros = _contexto.ReemplazarVariables(paso.Parametros);
+        var json = JObject.Parse(parametros);
+
+        return paso.TipoPaso switch
+        {
+            "HTTP" => await EjecutarHttpAsync(json),
+            "DLL" => EjecutarDll(json),
+            _ => new PasoResultado { Exito = false, Mensaje = $"Tipo de paso desconocido: {paso.TipoPaso}" }
+        };
+    }
+
+    private async Task<PasoResultado> EjecutarHttpAsync(JObject parametros)
+    {
+        string url = parametros["url"]?.ToString();
+        string method = parametros["method"]?.ToString()?.ToUpper() ?? "GET";
+        string body = parametros["body"]?.ToString();
+
+        using var client = new HttpClient();
+        HttpResponseMessage response;
+
+        if (method == "POST")
+            response = await client.PostAsync(url, new StringContent(body, Encoding.UTF8, "application/json"));
+        else
+            response = await client.GetAsync(url);
+
+        string content = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+            return new PasoResultado { Exito = false, Mensaje = $"Error {response.StatusCode}", Salida = content };
+
+        // Si se definió mapToObject, mapear a UsuarioDto
+        if (parametros["mapToObject"] != null)
+        {
+            string varName = parametros["mapToObject"].ToString();
+            var usuario = Newtonsoft.Json.JsonConvert.DeserializeObject<UsuarioDto>(content);
+            _contexto.SetVariable(varName, usuario);
+        }
+
+        return new PasoResultado { Exito = true, Mensaje = "OK", Salida = content };
+    }
+
+    private PasoResultado EjecutarDll(JObject parametros)
+    {
+        string method = parametros["method"]?.ToString();
+        string argVar = parametros["argument"]?.ToString();
+
+        if (method == "ValidarUsuario" && argVar == "{{Usuario}}")
+        {
+            var usuario = _contexto.GetVariable<UsuarioDto>("Usuario");
+            var servicio = new ServicioUsuarios();
+            bool valido = servicio.ValidarUsuario(usuario);
+
+            return new PasoResultado
+            {
+                Exito = valido,
+                Mensaje = valido ? "Usuario válido" : "Usuario inválido",
+                Salida = Newtonsoft.Json.JsonConvert.SerializeObject(usuario)
+            };
+        }
+
+        return new PasoResultado { Exito = false, Mensaje = "Método DLL no reconocido" };
+    }
+}
+
+
+6. Flujo de ejecución
+-----
+
+{ "id": 101, "nombre": "Juan Pérez", "email": "juan@test.com" }
+
+
+_contexto.SetVariable("Usuario", UsuarioDto);
+
+
