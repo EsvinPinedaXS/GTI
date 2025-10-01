@@ -1,0 +1,298 @@
+1. Diccionario de variables de ejecución
+public class EscenarioContexto
+{
+    public Dictionary<string, object> Variables { get; private set; } = new Dictionary<string, object>();
+
+    public void SetVariable(string key, object value)
+    {
+        Variables[key] = value;
+    }
+
+    public T GetVariable<T>(string key)
+    {
+        if (Variables.TryGetValue(key, out var value))
+            return (T)value;
+
+        throw new Exception($"Variable '{key}' no encontrada en el contexto");
+    }
+}
+
+--------
+2. Paso con soporte de placeholders
+public class PasoResultado
+{
+    public bool Exito { get; set; }
+    public string Mensaje { get; set; }
+    public string Salida { get; set; }
+}
+
+
+--------
+3. Motor con reemplazo dinámico
+public class MotorEscenarios
+{
+    private readonly EscenarioContexto _contexto;
+
+    public MotorEscenarios(EscenarioContexto contexto)
+    {
+        _contexto = contexto;
+    }
+
+    private string ReemplazarVariables(string input)
+    {
+        foreach (var variable in _contexto.Variables)
+        {
+            input = input.Replace("{{" + variable.Key + "}}", variable.Value.ToString());
+        }
+        return input;
+    }
+
+    public async Task<PasoResultado> EjecutarPasoAsync(PasoEscenario paso)
+    {
+        // Reemplazar variables dinámicas en parámetros
+        var parametros = ReemplazarVariables(paso.Parametros);
+
+        switch (paso.TipoPaso)
+        {
+            case "HTTP":
+                return await EjecutarHttpAsync(parametros);
+            case "DLL":
+                return EjecutarDll(parametros);
+            default:
+                return new PasoResultado { Exito = false, Mensaje = "Tipo de paso desconocido" };
+        }
+    }
+
+    private async Task<PasoResultado> EjecutarHttpAsync(string parametros)
+    {
+        // Aquí parseas el JSON, llamas HttpClient, etc.
+        // Supongamos que devuelve un JSON con {"UserId": 123}
+        var result = new PasoResultado
+        {
+            Exito = true,
+            Mensaje = "OK",
+            Salida = "{ \"UserId\": 123 }"
+        };
+
+        // Guardar variable en el contexto
+        _contexto.SetVariable("UserId", 123);
+
+        return result;
+    }
+
+    private PasoResultado EjecutarDll(string parametros)
+    {
+        // Ejemplo usando un método de la DLL
+        int nuevoId = 456;
+        _contexto.SetVariable("NuevoId", nuevoId);
+
+        return new PasoResultado
+        {
+            Exito = true,
+            Mensaje = "DLL ejecutada",
+            Salida = nuevoId.ToString()
+        };
+    }
+}
+
+
+
+----------------------------------------------------------------------------------------------
+1. SQL (estructura + datos de ejemplo)
+
+-- Escenarios
+INSERT INTO Escenarios (EscenarioId, Nombre, Descripcion, Activo) VALUES
+(1, 'Crear Usuario', 'Crea un usuario en el API', 1),
+(2, 'Consultar Usuario', 'Consulta el usuario creado en otro escenario', 1);
+
+-- Pasos del Escenario 1
+INSERT INTO PasosEscenario (PasoId, EscenarioId, Orden, TipoPaso, Parametros) VALUES
+(1, 1, 1, 'HTTP',
+ '{
+    "url": "https://api.local/usuarios/crear",
+    "method": "POST",
+    "body": { "nombre": "Juan Pérez", "email": "juan@test.com" },
+    "save": { "UserId": "$.id" }
+ }');
+
+-- Pasos del Escenario 2
+INSERT INTO PasosEscenario (PasoId, EscenarioId, Orden, TipoPaso, Parametros) VALUES
+(2, 2, 1, 'HTTP',
+ '{
+    "url": "https://api.local/usuarios/{{UserId}}",
+    "method": "GET",
+    "save": { "UserEmail": "$.email" }
+ }');
+
+
+------
+2. Modelo de pasos
+
+public class PasoEscenario
+{
+    public int PasoId { get; set; }
+    public int EscenarioId { get; set; }
+    public int Orden { get; set; }
+    public string TipoPaso { get; set; }
+    public string Parametros { get; set; }
+}
+
+public class PasoResultado
+{
+    public bool Exito { get; set; }
+    public string Mensaje { get; set; }
+    public string Salida { get; set; }
+}
+
+
+-----------
+3. Contexto de ejecución
+
+
+public class EscenarioContexto
+{
+    public Dictionary<string, object> Variables { get; private set; } = new();
+
+    public void SetVariable(string key, object value) => Variables[key] = value;
+
+    public T GetVariable<T>(string key)
+    {
+        if (Variables.TryGetValue(key, out var value))
+            return (T)value;
+
+        throw new Exception($"Variable '{key}' no encontrada.");
+    }
+
+    public string ReemplazarVariables(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+        foreach (var variable in Variables)
+        {
+            input = input.Replace("{{" + variable.Key + "}}", variable.Value.ToString());
+        }
+        return input;
+    }
+}
+
+------------------------------
+4. Motor de ejecución con soporte de save
+
+using Newtonsoft.Json.Linq;
+using System.Net.Http;
+using System.Text;
+
+public class MotorEscenarios
+{
+    private readonly EscenarioContexto _contexto;
+
+    public MotorEscenarios(EscenarioContexto contexto)
+    {
+        _contexto = contexto;
+    }
+
+    public async Task<PasoResultado> EjecutarPasoAsync(PasoEscenario paso)
+    {
+        string parametros = _contexto.ReemplazarVariables(paso.Parametros);
+
+        var json = JObject.Parse(parametros);
+        string tipo = paso.TipoPaso;
+
+        return tipo switch
+        {
+            "HTTP" => await EjecutarHttpAsync(json),
+            _ => new PasoResultado { Exito = false, Mensaje = $"Tipo de paso desconocido: {tipo}" }
+        };
+    }
+
+    private async Task<PasoResultado> EjecutarHttpAsync(JObject parametros)
+    {
+        string url = parametros["url"]?.ToString();
+        string method = parametros["method"]?.ToString()?.ToUpper() ?? "GET";
+        string body = parametros["body"]?.ToString();
+
+        using var client = new HttpClient();
+        HttpResponseMessage response;
+
+        if (method == "POST")
+        {
+            response = await client.PostAsync(url, new StringContent(body, Encoding.UTF8, "application/json"));
+        }
+        else
+        {
+            response = await client.GetAsync(url);
+        }
+
+        string content = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return new PasoResultado { Exito = false, Mensaje = $"Error {response.StatusCode}", Salida = content };
+        }
+
+        // Procesar "save"
+        if (parametros["save"] != null)
+        {
+            var save = (JObject)parametros["save"];
+            var jsonResp = JObject.Parse(content);
+
+            foreach (var prop in save)
+            {
+                string varName = prop.Key;
+                string jsonPath = prop.Value.ToString();
+                var token = jsonResp.SelectToken(jsonPath);
+                if (token != null)
+                {
+                    _contexto.SetVariable(varName, token.ToString());
+                }
+            }
+        }
+
+        return new PasoResultado { Exito = true, Mensaje = "OK", Salida = content };
+    }
+}
+
+-----------------------------------------
+5. Controlador para ejecutar escenarios
+
+public class EscenariosController : Controller
+{
+    private readonly TuDbContext _db = new TuDbContext();
+
+    public async Task<ActionResult> EjecutarTodos()
+    {
+        var escenarios = _db.Escenarios.Include("Pasos").Where(e => e.Activo).ToList();
+
+        var contexto = new EscenarioContexto();
+        var motor = new MotorEscenarios(contexto);
+        var resultados = new List<PasoResultado>();
+
+        foreach (var escenario in escenarios)
+        {
+            foreach (var paso in escenario.Pasos.OrderBy(p => p.Orden))
+            {
+                var resultado = await motor.EjecutarPasoAsync(new PasoEscenario
+                {
+                    PasoId = paso.PasoId,
+                    EscenarioId = paso.EscenarioId,
+                    Orden = paso.Orden,
+                    TipoPaso = paso.TipoPaso,
+                    Parametros = paso.Parametros
+                });
+
+                resultados.Add(resultado);
+
+                if (!resultado.Exito) break; // si falla, cortar
+            }
+        }
+
+        return View("ResultadosBatch", resultados);
+    }
+}
+-------------------------------
+6. Ejemplo de ejecución
+
+{ "id": 101, "email": "juan@test.com" }
+{ "id": 101, "email": "juan@test.com" }
+
+
+
