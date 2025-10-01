@@ -1,0 +1,305 @@
+1. Estructura SQL
+-- Escenarios definidos
+CREATE TABLE Escenarios (
+    EscenarioId INT IDENTITY(1,1) PRIMARY KEY,
+    Nombre NVARCHAR(200) NOT NULL,
+    Descripcion NVARCHAR(MAX) NULL,
+    EscenarioDependenciaId INT NULL, -- si depende de otro escenario
+    Activo BIT NOT NULL DEFAULT 1,
+    FOREIGN KEY (EscenarioDependenciaId) REFERENCES Escenarios(EscenarioId)
+);
+
+-- Pasos de cada escenario
+CREATE TABLE EscenarioPasos (
+    PasoId INT IDENTITY(1,1) PRIMARY KEY,
+    EscenarioId INT NOT NULL,
+    Orden INT NOT NULL,
+    TipoPaso NVARCHAR(50) NOT NULL,  -- HTTP, DLL, SQL, etc.
+    Parametros NVARCHAR(MAX) NOT NULL, -- JSON con placeholders
+    FOREIGN KEY (EscenarioId) REFERENCES Escenarios(EscenarioId)
+);
+
+-- Ejecuciones de escenarios
+CREATE TABLE EscenarioEjecuciones (
+    EjecucionId INT IDENTITY(1,1) PRIMARY KEY,
+    EscenarioId INT NOT NULL,
+    Usuario NVARCHAR(100) NOT NULL,
+    FechaEjecucion DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (EscenarioId) REFERENCES Escenarios(EscenarioId)
+);
+
+-- Resultados de pasos de cada ejecución
+CREATE TABLE EscenarioResultados (
+    ResultadoId INT IDENTITY(1,1) PRIMARY KEY,
+    EjecucionId INT NOT NULL,
+    PasoId INT NOT NULL,
+    Exito BIT NOT NULL,
+    Mensaje NVARCHAR(MAX) NULL,
+    ValorDevuelto NVARCHAR(MAX) NULL,
+    FOREIGN KEY (EjecucionId) REFERENCES EscenarioEjecuciones(EjecucionId),
+    FOREIGN KEY (PasoId) REFERENCES EscenarioPasos(PasoId)
+);
+
+-----
+
+2. Modelos en C#
+
+public class Escenario
+{
+    public int EscenarioId { get; set; }
+    public string Nombre { get; set; }
+    public string Descripcion { get; set; }
+    public int? EscenarioDependenciaId { get; set; }
+    public bool Activo { get; set; }
+    public List<EscenarioPaso> Pasos { get; set; }
+}
+
+public class EscenarioPaso
+{
+    public int PasoId { get; set; }
+    public int EscenarioId { get; set; }
+    public int Orden { get; set; }
+    public string TipoPaso { get; set; }
+    public string Parametros { get; set; } // JSON con placeholders
+}
+
+public class PasoResultado
+{
+    public int PasoId { get; set; }
+    public string Escenario { get; set; }
+    public bool Exito { get; set; }
+    public string Mensaje { get; set; }
+    public object ValorDevuelto { get; set; } // Puede ser string, número, objeto, etc.
+}
+
+public class UsuarioDto
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; }
+    public string Email { get; set; }
+}
+
+
+3. Contexto de ejecución (variables dinámicas)
+public class EscenarioContexto
+{
+    public Dictionary<string, object> Variables { get; private set; } = new();
+
+    public void SetVariable(string key, object value) => Variables[key] = value;
+
+    public T GetVariable<T>(string key)
+    {
+        if (Variables.TryGetValue(key, out var value))
+            return (T)value;
+        throw new Exception($"Variable '{key}' no encontrada.");
+    }
+
+    public string ReemplazarVariables(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+
+        foreach (var variable in Variables)
+        {
+            if (variable.Value is not null)
+            {
+                var type = variable.Value.GetType();
+                input = input.Replace("{{" + variable.Key + "}}", variable.Value.ToString());
+
+                foreach (var prop in type.GetProperties())
+                {
+                    var placeholder = $"{{{{{variable.Key}.{prop.Name}}}}}";
+                    var propValue = prop.GetValue(variable.Value)?.ToString();
+                    if (propValue != null)
+                        input = input.Replace(placeholder, propValue);
+                }
+            }
+        }
+        return input;
+    }
+}
+
+
+4. Motor de Escenarios
+public class MotorEscenarios
+{
+    public EscenarioContexto Contexto { get; } = new();
+
+    public List<PasoResultado> EjecutarEscenario(Escenario escenario, string usuario)
+    {
+        var resultados = new List<PasoResultado>();
+
+        // Insertar ejecución
+        int ejecucionId = GuardarEjecucion(escenario.EscenarioId, usuario);
+
+        foreach (var paso in escenario.Pasos.OrderBy(p => p.Orden))
+        {
+            var parametros = Contexto.ReemplazarVariables(paso.Parametros);
+            PasoResultado resultado;
+
+            try
+            {
+                switch (paso.TipoPaso)
+                {
+                    case "HTTP":
+                        resultado = EjecutarHttp(paso, parametros);
+                        break;
+                    case "DLL":
+                        resultado = EjecutarDll(paso, parametros);
+                        break;
+                    default:
+                        resultado = new PasoResultado
+                        {
+                            PasoId = paso.PasoId,
+                            Escenario = escenario.Nombre,
+                            Exito = false,
+                            Mensaje = "Tipo de paso no soportado"
+                        };
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                resultado = new PasoResultado
+                {
+                    PasoId = paso.PasoId,
+                    Escenario = escenario.Nombre,
+                    Exito = false,
+                    Mensaje = ex.Message
+                };
+            }
+
+            resultados.Add(resultado);
+            GuardarResultado(ejecucionId, resultado);
+        }
+
+        return resultados;
+    }
+
+    private int GuardarEjecucion(int escenarioId, string usuario)
+    {
+        // Guardar en EscenarioEjecuciones y devolver ID
+        return 1; // simulado
+    }
+
+    private void GuardarResultado(int ejecucionId, PasoResultado resultado)
+    {
+        // Guardar en EscenarioResultados
+    }
+
+    private PasoResultado EjecutarHttp(EscenarioPaso paso, string parametros)
+    {
+        // Simulación: se guarda un objeto como respuesta
+        var usuario = new UsuarioDto { Id = 101, Nombre = "Juan Pérez", Email = "juan@test.com" };
+        Contexto.SetVariable("Usuario", usuario);
+
+        return new PasoResultado
+        {
+            PasoId = paso.PasoId,
+            Escenario = "HTTP",
+            Exito = true,
+            Mensaje = "Llamada HTTP OK",
+            ValorDevuelto = usuario
+        };
+    }
+
+    private PasoResultado EjecutarDll(EscenarioPaso paso, string parametros)
+    {
+        var usuario = Contexto.GetVariable<UsuarioDto>("Usuario");
+        var servicio = new ServicioUsuarios();
+        var valido = servicio.ValidarUsuario(usuario);
+
+        return new PasoResultado
+        {
+            PasoId = paso.PasoId,
+            Escenario = "DLL",
+            Exito = valido,
+            Mensaje = valido ? "Usuario válido" : "Usuario inválido",
+            ValorDevuelto = valido
+        };
+    }
+}
+
+public class ServicioUsuarios
+{
+    public bool ValidarUsuario(UsuarioDto usuario)
+    {
+        return !string.IsNullOrEmpty(usuario.Email) && usuario.Email.Contains("@");
+    }
+}
+
+
+5. Controlador y vistas
+public class EscenariosController : Controller
+{
+    private readonly MotorEscenarios _motor = new MotorEscenarios();
+
+    public ActionResult Index()
+    {
+        var escenarios = new List<Escenario>
+        {
+            new Escenario
+            {
+                EscenarioId = 1,
+                Nombre = "Crear Usuario",
+                Pasos = new List<EscenarioPaso>
+                {
+                    new EscenarioPaso { PasoId = 1, Orden = 1, TipoPaso = "HTTP", Parametros = "{}" }
+                }
+            },
+            new Escenario
+            {
+                EscenarioId = 2,
+                Nombre = "Validar Usuario",
+                EscenarioDependenciaId = 1,
+                Pasos = new List<EscenarioPaso>
+                {
+                    new EscenarioPaso { PasoId = 2, Orden = 1, TipoPaso = "DLL", Parametros = "{}" }
+                }
+            }
+        };
+        return View(escenarios);
+    }
+
+    public ActionResult EjecutarTodos()
+    {
+        string usuario = User.Identity.Name ?? "anonimo";
+        var escenarios = Index().Model as List<Escenario>;
+        var resultadosTotales = new List<PasoResultado>();
+
+        foreach (var esc in escenarios)
+        {
+            var resultados = _motor.EjecutarEscenario(esc, usuario);
+            resultadosTotales.AddRange(resultados);
+        }
+
+        return View("ResultadoTodos", resultadosTotales);
+    }
+}
+
+
+@model List<PasoResultado>
+
+<h2>Resultados de ejecución</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Escenario</th>
+            <th>Éxito</th>
+            <th>Mensaje</th>
+            <th>Valor devuelto</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model)
+        {
+            <tr class="@(r.Exito ? "table-success" : "table-danger")">
+                <td>@r.Escenario</td>
+                <td>@(r.Exito ? "✔" : "✘")</td>
+                <td>@r.Mensaje</td>
+                <td>@(r.ValorDevuelto != null ? r.ValorDevuelto.ToString() : "-")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
