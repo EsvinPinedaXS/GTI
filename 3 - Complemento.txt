@@ -1,0 +1,151 @@
+1. Controlador (EscenariosController)
+
+// GET: Escenarios/EjecutarTodos
+public async Task<ActionResult> EjecutarTodos()
+{
+    var escenarios = await _db.Escenarios.Include(e => e.Pasos)
+                                         .Where(e => e.Activo)
+                                         .ToListAsync();
+
+    var motor = new MotorEscenarios();
+    var ejecuciones = new List<EscenarioEjecucion>();
+
+    foreach (var escenario in escenarios)
+    {
+        var ejecucion = new EscenarioEjecucion
+        {
+            EscenarioId = escenario.EscenarioId,
+            EjecutadoPor = User.Identity.Name ?? "batch-run",
+            FechaEjecucion = DateTime.Now
+        };
+        _db.Ejecuciones.Add(ejecucion);
+        await _db.SaveChangesAsync();
+
+        bool exitoGlobal = true;
+
+        foreach (var paso in escenario.Pasos.OrderBy(p => p.Orden))
+        {
+            var resultado = await motor.EjecutarPasoAsync(new PasoEscenario
+            {
+                Id = paso.PasoId,
+                EscenarioId = paso.EscenarioId,
+                Orden = paso.Orden,
+                TipoPaso = paso.TipoPaso,
+                Parametros = paso.Parametros
+            });
+
+            _db.Resultados.Add(new EscenarioResultado
+            {
+                EjecucionId = ejecucion.EjecucionId,
+                PasoId = paso.PasoId,
+                Exito = resultado.Exito,
+                Mensaje = resultado.Mensaje,
+                Salida = resultado.Salida
+            });
+
+            if (!resultado.Exito)
+            {
+                exitoGlobal = false;
+                break;
+            }
+        }
+
+        ejecucion.Exito = exitoGlobal;
+        ejecucion.MensajeResumen = exitoGlobal ? "Escenario ejecutado con éxito" : "Escenario fallido en un paso";
+        await _db.SaveChangesAsync();
+
+        ejecuciones.Add(ejecucion);
+    }
+
+    // Redirigimos a la vista de resumen
+    TempData["Ejecuciones"] = ejecuciones;
+    return RedirectToAction("ResultadosBatch");
+}
+
+// GET: Escenarios/ResultadosBatch
+public ActionResult ResultadosBatch()
+{
+    var ejecuciones = TempData["Ejecuciones"] as List<EscenarioEjecucion>;
+    if (ejecuciones == null)
+        return RedirectToAction("Index");
+
+    return View(ejecuciones);
+}
+
+--------
+2. Vista Index.cshtml
+
+@model IEnumerable<TuProyecto.Models.Escenario>
+
+@{
+    ViewBag.Title = "Escenarios";
+}
+
+<h2>Escenarios disponibles</h2>
+
+<p>
+    @Html.ActionLink("Ejecutar Todos", "EjecutarTodos", "Escenarios", null, new { @class = "btn btn-danger" })
+</p>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.Nombre</td>
+            <td>@item.Descripcion</td>
+            <td>
+                @Html.ActionLink("Ejecutar", "Ejecutar", new { id = item.EscenarioId }, new { @class = "btn btn-success btn-sm" })
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+
+-----------
+3. Vista ResultadosBatch.cshtml
+@model IEnumerable<TuProyecto.Models.EscenarioEjecucion>
+
+@{
+    ViewBag.Title = "Resultados de ejecución masiva";
+}
+
+<h2>Resultados de ejecución (Todos los escenarios)</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Escenario</th>
+            <th>Ejecutado por</th>
+            <th>Fecha</th>
+            <th>Resultado</th>
+            <th>Detalle</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var e in Model)
+    {
+        <tr>
+            <td>@e.Escenario.Nombre</td>
+            <td>@e.EjecutadoPor</td>
+            <td>@e.FechaEjecucion</td>
+            <td>@(e.Exito == true ? "✔ Éxito" : "❌ Falló")</td>
+            <td>
+                @Html.ActionLink("Ver Detalle", "Resultados", new { id = e.EjecucionId }, new { @class = "btn btn-info btn-sm" })
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+<p>
+    @Html.ActionLink("Volver a Escenarios", "Index", "Escenarios", null, new { @class = "btn btn-primary" })
+</p>

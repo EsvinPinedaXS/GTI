@@ -1,0 +1,88 @@
+1. Tabla de Escenarios
+
+CREATE TABLE Escenarios (
+    EscenarioId INT IDENTITY(1,1) PRIMARY KEY,
+    Nombre NVARCHAR(200) NOT NULL,
+    Descripcion NVARCHAR(MAX) NULL,
+    Activo BIT NOT NULL DEFAULT 1,
+    FechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
+    CreadoPor NVARCHAR(100) NULL
+);
+
+
+2. Tabla de Pasos
+CREATE TABLE EscenarioPasos (
+    PasoId INT IDENTITY(1,1) PRIMARY KEY,
+    EscenarioId INT NOT NULL,
+    Orden INT NOT NULL,
+    TipoPaso NVARCHAR(50) NOT NULL,  -- API_CALL, DLL_CALL, VALIDACION
+    Parametros NVARCHAR(MAX) NOT NULL, -- JSON con config del paso
+    Activo BIT NOT NULL DEFAULT 1,
+    FechaCreacion DATETIME NOT NULL DEFAULT GETDATE(),
+    CreadoPor NVARCHAR(100) NULL,
+
+    CONSTRAINT FK_EscenarioPasos_Escenarios FOREIGN KEY (EscenarioId) REFERENCES Escenarios(EscenarioId)
+);
+
+
+-----
+3. Tabla de Ejecuciones
+CREATE TABLE EscenarioEjecuciones (
+    EjecucionId INT IDENTITY(1,1) PRIMARY KEY,
+    EscenarioId INT NOT NULL,
+    EjecutadoPor NVARCHAR(100) NOT NULL,
+    FechaEjecucion DATETIME NOT NULL DEFAULT GETDATE(),
+    Exito BIT NULL, -- true/false al terminar, null si quedó inconcluso
+    MensajeResumen NVARCHAR(MAX) NULL,
+
+    CONSTRAINT FK_Ejecuciones_Escenarios FOREIGN KEY (EscenarioId) REFERENCES Escenarios(EscenarioId)
+);
+
+
+4. Tabla de Resultados de Pasos
+CREATE TABLE EscenarioResultados (
+    ResultadoId INT IDENTITY(1,1) PRIMARY KEY,
+    EjecucionId INT NOT NULL,
+    PasoId INT NOT NULL,
+    Exito BIT NOT NULL,
+    Mensaje NVARCHAR(MAX) NULL,
+    Salida NVARCHAR(MAX) NULL, -- respuesta JSON del API o retorno DLL
+    FechaEjecucion DATETIME NOT NULL DEFAULT GETDATE(),
+
+    CONSTRAINT FK_Resultados_Ejecuciones FOREIGN KEY (EjecucionId) REFERENCES EscenarioEjecuciones(EjecucionId),
+    CONSTRAINT FK_Resultados_Pasos FOREIGN KEY (PasoId) REFERENCES EscenarioPasos(PasoId)
+);
+
+
+6. Ejemplo de inserción de un escenario completo
+-- Escenario
+INSERT INTO Escenarios (Nombre, Descripcion, CreadoPor)
+VALUES ('Registrar cliente', 'Prueba de alta de cliente vía API y DLL', 'admin');
+
+DECLARE @EscenarioId INT = SCOPE_IDENTITY();
+
+-- Paso 1: API_CALL
+INSERT INTO EscenarioPasos (EscenarioId, Orden, TipoPaso, Parametros, CreadoPor)
+VALUES (@EscenarioId, 1, 'API_CALL', '{
+  "metodo": "POST",
+  "endpoint": "http://localhost:5000/api/clientes",
+  "payload": "{ \"id\": 1, \"nombre\": \"Juan\" }"
+}', 'admin');
+
+-- Paso 2: DLL_CALL
+INSERT INTO EscenarioPasos (EscenarioId, Orden, TipoPaso, Parametros, CreadoPor)
+VALUES (@EscenarioId, 2, 'DLL_CALL', '{
+  "clase": "MiProyecto.Servicios.ClienteService, MiProyecto",
+  "metodo": "Registrar",
+  "argumentos": [ { "Id": 1, "Nombre": "Juan" } ]
+}', 'admin');
+
+-- Paso 3: VALIDACION
+INSERT INTO EscenarioPasos (EscenarioId, Orden, TipoPaso, Parametros, CreadoPor)
+VALUES (@EscenarioId, 3, 'VALIDACION', '{
+  "validaciones": [
+    { "TipoDato": "bool", "ValorEsperado": "true", "ValorObtenido": "true" }
+  ]
+}', 'admin');
+
+
