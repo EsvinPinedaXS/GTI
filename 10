@@ -1,0 +1,133 @@
+using Newtonsoft.Json.Linq;
+using System.Net.Http;
+using System.Text;
+
+public class MotorEscenarios
+{
+    public async Task<ResultadoPaso> EjecutarPasoAsync(PasoEscenario paso)
+    {
+        try
+        {
+            var parametros = JObject.Parse(paso.Parametros);
+
+            switch (paso.TipoPaso.ToUpper())
+            {
+                case "API_CALL":
+                    return await EjecutarApiCall(parametros, paso.Id);
+
+                case "DLL_CALL":
+                    return EjecutarDllCall(parametros, paso.Id);
+
+                case "VALIDACION":
+                    return EjecutarValidacion(parametros, paso.Id);
+
+                default:
+                    return new ResultadoPaso
+                    {
+                        PasoId = paso.Id,
+                        Exito = false,
+                        Mensaje = $"Tipo de paso no soportado: {paso.TipoPaso}"
+                    };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new ResultadoPaso
+            {
+                PasoId = paso.Id,
+                Exito = false,
+                Mensaje = $"Error ejecutando paso: {ex.Message}"
+            };
+        }
+    }
+
+    // 🔹 Paso de API
+    private async Task<ResultadoPaso> EjecutarApiCall(JObject parametros, int pasoId)
+    {
+        using (var client = new HttpClient())
+        {
+            HttpResponseMessage response;
+            string metodo = parametros["metodo"].ToString().ToUpper();
+            string endpoint = parametros["endpoint"].ToString();
+            string payload = parametros["payload"]?.ToString();
+
+            switch (metodo)
+            {
+                case "GET":
+                    response = await client.GetAsync(endpoint);
+                    break;
+                case "POST":
+                    response = await client.PostAsync(endpoint, new StringContent(payload, Encoding.UTF8, "application/json"));
+                    break;
+                default:
+                    return new ResultadoPaso { PasoId = pasoId, Exito = false, Mensaje = $"Método {metodo} no soportado" };
+            }
+
+            string contenido = await response.Content.ReadAsStringAsync();
+            return new ResultadoPaso { PasoId = pasoId, Exito = response.IsSuccessStatusCode, Mensaje = "API ejecutada", Salida = contenido };
+        }
+    }
+
+    // 🔹 Paso de DLL
+    private ResultadoPaso EjecutarDllCall(JObject parametros, int pasoId)
+    {
+        string clase = parametros["clase"].ToString();
+        string metodo = parametros["metodo"].ToString();
+        JArray args = (JArray)parametros["argumentos"];
+
+        // ⚠️ Simplificado: reflexión para invocar método
+        Type tipo = Type.GetType(clase); // Ejemplo: "MiProyecto.Servicios.ClienteService, MiProyecto"
+        object instancia = Activator.CreateInstance(tipo);
+        var metodoInfo = tipo.GetMethod(metodo);
+
+        object[] argumentos = args.ToObject<object[]>();
+        var resultado = metodoInfo.Invoke(instancia, argumentos);
+
+        return new ResultadoPaso
+        {
+            PasoId = pasoId,
+            Exito = true,
+            Mensaje = "DLL ejecutada correctamente",
+            Salida = resultado?.ToString()
+        };
+    }
+
+    // 🔹 Paso de Validación
+    private ResultadoPaso EjecutarValidacion(JObject parametros, int pasoId)
+    {
+        // Ejemplo: validar string, número, decimal o boolean
+        var validaciones = (JArray)parametros["validaciones"];
+
+        foreach (var v in validaciones)
+        {
+            string tipoDato = v["TipoDato"].ToString();
+            string valorEsperado = v["ValorEsperado"].ToString();
+            string valorObtenido = v["ValorObtenido"].ToString();
+
+            bool ok = false;
+
+            switch (tipoDato.ToLower())
+            {
+                case "string":
+                    ok = valorObtenido == valorEsperado;
+                    break;
+                case "int":
+                    ok = int.Parse(valorObtenido) == int.Parse(valorEsperado);
+                    break;
+                case "decimal":
+                    ok = decimal.Parse(valorObtenido) == decimal.Parse(valorEsperado);
+                    break;
+                case "bool":
+                    ok = bool.Parse(valorObtenido) == bool.Parse(valorEsperado);
+                    break;
+            }
+
+            if (!ok)
+            {
+                return new ResultadoPaso { PasoId = pasoId, Exito = false, Mensaje = $"Validación fallida: esperado {valorEsperado}, obtenido {valorObtenido}" };
+            }
+        }
+
+        return new ResultadoPaso { PasoId = pasoId, Exito = true, Mensaje = "Validaciones OK" };
+    }
+}
