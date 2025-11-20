@@ -1,0 +1,40 @@
+public ActionResult GetDatos()
+{
+    var lista = new List<Dictionary<string, object>>();
+
+    using (SqlConnection con = new SqlConnection(cadena))
+    using (SqlCommand cmd = new SqlCommand("EXEC dbo.MiSP", con))
+    {
+        con.Open();
+        using (var reader = cmd.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                var row = new Dictionary<string, object>();
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    row[reader.GetName(i)] = reader.GetValue(i);
+                }
+                lista.Add(row);
+            }
+        }
+    }
+
+    return Json(lista, JsonRequestBehavior.AllowGet);
+}
+
+
+$.get('/Controller/GetDatos', function (data) {
+
+    let columnas = Object.keys(data[0]).map(c => ({
+        data: c,
+        title: c
+    }));
+
+    $('#tabla').DataTable({
+        data: data,
+        columns: columnas
+    });
+
+});
+
