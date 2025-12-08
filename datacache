@@ -1,0 +1,172 @@
+$(document).ready(function() {
+    $('#miTabla').DataTable({
+        serverSide: true, // Mantener en true
+        processing: true,
+        pageLength: 25,
+        ajax: {
+            url: '/api/datos',
+            type: 'POST',
+            data: function(d) {
+                // Agregar parámetros adicionales
+                d.cacheKey = localStorage.getItem('cacheKey');
+                d.useCache = true;
+                return d;
+            }
+        },
+        // ... resto de configuración
+    });
+});
+
+----
+
+public class DatosController : ApiController
+{
+    private static ConcurrentDictionary<string, CacheItem> _cache = 
+        new ConcurrentDictionary<string, CacheItem>();
+    
+    [HttpPost]
+    public IHttpActionResult ObtenerDatos([FromBody] DataTableRequest request)
+    {
+        // 1. Verificar si tenemos datos en cache recientes
+        var cacheKey = request.cacheKey;
+        if (request.useCache && _cache.ContainsKey(cacheKey))
+        {
+            var cacheItem = _cache[cacheKey];
+            if (cacheItem.IsValid()) // Método que verifica antigüedad
+            {
+                // Filtrar datos en memoria desde el cache
+                var filteredData = FilterInMemory(cacheItem.Data, request);
+                return Ok(FormatForDataTable(filteredData, request));
+            }
+        }
+        
+        // 2. Si no hay cache válido, obtener datos de BD con filtros optimizados
+        var datos = ObtenerDatosDesdeBD(request);
+        
+        // 3. Guardar en cache
+        var newCacheItem = new CacheItem
+        {
+            Data = datos,
+            Created = DateTime.UtcNow,
+            ExpiresInMinutes = 30
+        };
+        _cache[cacheKey] = newCacheItem;
+        
+        return Ok(FormatForDataTable(datos, request));
+    }
+    
+    private List<MiModelo> ObtenerDatosDesdeBD(DataTableRequest request)
+    {
+        // Usar WHERE exactos en lugar de LIKE cuando sea posible
+        var query = _context.Datos.AsQueryable();
+        
+        // Aplicar filtros específicos (no genéricos LIKE)
+        if (!string.IsNullOrEmpty(request.FiltroEspecifico1))
+            query = query.Where(x => x.Campo1 == request.FiltroEspecifico1);
+        
+        if (request.FiltroFecha != null)
+            query = query.Where(x => x.Fecha >= request.FiltroFecha);
+        
+        // Solo devolver los datos necesarios
+        return query
+            .OrderBy(x => x.Id)
+            .Skip(request.start)
+            .Take(request.length)
+            .Select(x => new MiModelo 
+            {
+                // Solo las columnas necesarias (15 que se muestran)
+                Id = x.Id,
+                Nombre = x.Nombre,
+                // ... resto de campos visibles
+            })
+            .ToList();
+    }
+    
+    private List<MiModelo> FilterInMemory(List<MiModelo> datos, DataTableRequest request)
+    {
+        // Filtrar en memoria usando Contains (más rápido que SQL LIKE)
+        if (!string.IsNullOrEmpty(request.search.value))
+        {
+            var searchTerm = request.search.value.ToLower();
+            datos = datos.Where(x => 
+                x.Nombre.ToLower().Contains(searchTerm) ||
+                x.OtroCampo.ToLower().Contains(searchTerm))
+                .ToList();
+        }
+        return datos;
+    }
+}
+
+--- 
+
+public class CacheItem
+{
+    public List<MiModelo> Data { get; set; }
+    public DateTime Created { get; set; }
+    public int ExpiresInMinutes { get; set; }
+    
+    public bool IsValid()
+    {
+        return DateTime.UtcNow <= Created.AddMinutes(ExpiresInMinutes);
+    }
+}
+
+--- 
+
+// Servicio para manejar precarga de datos
+public class DataPreloadService
+{
+    public async Task<string> PreloadCommonData()
+    {
+        // Precargar datos más comunes (ej: últimos 3 meses)
+        var cacheKey = Guid.NewGuid().ToString();
+        var commonData = await _context.Datos
+            .Where(x => x.Fecha >= DateTime.Now.AddMonths(-3))
+            .Take(2000) // Límite seguro para memoria
+            .Select(x => new MiModelo 
+            {
+                // Solo campos necesarios
+            })
+            .ToListAsync();
+        
+        _cache[cacheKey] = new CacheItem 
+        { 
+            Data = commonData,
+            Created = DateTime.UtcNow
+        };
+        
+        return cacheKey;
+    }
+}
+
+---
+
+-- Crear índices en campos de búsqueda frecuentes
+CREATE INDEX IX_Datos_Fecha ON Datos(Fecha);
+CREATE INDEX IX_Datos_Estado ON Datos(Estado);
+CREATE INDEX IX_Datos_Codigo ON Datos(Codigo);
+
+---
+
+public class PagedResult<T>
+{
+    public List<T> Data { get; set; }
+    public int TotalRecords { get; set; }
+    public int FilteredRecords { get; set; }
+    public string CacheKey { get; set; }
+}
+
+---
+
+let searchTimeout;
+$('#searchInput').on('keyup', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        if ($(this).val().length === 0 || $(this).val().length >= 3) {
+            $('#miTabla').DataTable().ajax.reload();
+        }
+    }, 500); // Delay de 500ms
+});
+
+----
+
