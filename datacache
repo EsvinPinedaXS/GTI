@@ -170,3 +170,21 @@ $('#searchInput').on('keyup', function() {
 
 ----
 
+public static string QuitarTildes(string texto)
+{
+    if (string.IsNullOrWhiteSpace(texto))
+        return texto;
+
+    texto = texto.Normalize(NormalizationForm.FormD);
+
+    var sb = new StringBuilder();
+
+    foreach (char c in texto)
+    {
+        var categoria = CharUnicodeInfo.GetUnicodeCategory(c);
+        if (categoria != UnicodeCategory.NonSpacingMark)
+            sb.Append(c);
+    }
+
+    return sb.ToString().Normalize(NormalizationForm.FormC);
+}
